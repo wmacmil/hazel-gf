@@ -1,7 +1,10 @@
-// Precompute every complete S tree's GF linearization so the editor can run
-// as a static site (GitHub Pages) with no GF server. The grammar has no
-// recursion, so the set of complete trees is finite (16416 today). Output is
-// sharded by tense (the MkS Temp argument) so a page loads one shard at a time.
+// Build the test oracle and the paradigm tables.
+//
+// oracle/: the GF *server's* bracketed linearization of every complete tree up
+// to the enumeration depth, sharded by tense. Tests check the in-browser
+// runtime (vendor/gf-typescript) against it; it is not shipped.
+// public/static/paradigms.json: GF's `l -table` for every lexical leaf, shipped
+// and used to split words into morphemes.
 import { spawn, execFileSync } from 'node:child_process'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -9,7 +12,8 @@ import { fileURLToPath } from 'node:url'
 
 const appDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const pgf = resolve(appDir, 'public/HazelGF.pgf')
-const outDir = resolve(appDir, 'public/static')
+const outDir = resolve(appDir, 'oracle')
+const staticDir = resolve(appDir, 'public/static')
 const port = process.env.GF_PRECOMPUTE_PORT ?? '41399'
 const languages = new Set(['HazelGFEng', 'HazelGFGer', 'HazelGFSwe'])
 
@@ -79,9 +83,10 @@ try {
   for (const [tense, table] of Object.entries(shards)) {
     writeFileSync(resolve(outDir, `linearizations-${tense}.json`), JSON.stringify(table))
   }
-  writeFileSync(resolve(outDir, 'paradigms.json'), JSON.stringify(paradigms()))
+  mkdirSync(staticDir, { recursive: true })
+  writeFileSync(resolve(staticDir, 'paradigms.json'), JSON.stringify(paradigms()))
   writeFileSync(resolve(outDir, 'index.json'), JSON.stringify({ shards: Object.keys(shards).sort(), trees: trees.length }))
-  console.log(`precomputed ${trees.length} trees × ${languages.size} languages in ${Object.keys(shards).length} tense shards → public/static/`)
+  console.log(`precomputed ${trees.length} trees × ${languages.size} languages in ${Object.keys(shards).length} tense shards → oracle/`)
 } finally {
   gf.kill('SIGTERM')
 }

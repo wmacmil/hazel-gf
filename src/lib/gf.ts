@@ -1,6 +1,7 @@
 import type { LanguageId, LinearizationProjection, Node } from './model'
 import { normalizeLinearizations, type RawLinearization } from './projection'
 import type { Paradigms } from './morphology'
+import { linearizeInBrowser, loadBrowserGrammar, type BrowserGrammar } from './browser-gf'
 
 export interface GfRuntime {
   readonly label: string
@@ -12,7 +13,7 @@ const SUPPORTED = new Set<LanguageId>(['HazelGFEng', 'HazelGFGer', 'HazelGFSwe']
 
 let paradigms: Promise<Paradigms> | undefined
 
-/** GF paradigm tables (scripts/precompute.mjs), used to split words into morphemes. */
+/** GF paradigm tables (scripts/oracle.mjs), used to split words into morphemes. */
 function loadParadigms(): Promise<Paradigms> {
   paradigms ??= fetch(`${import.meta.env.BASE_URL}static/paradigms.json`).then(response => {
     if (!response.ok) throw new Error(`paradigms.json request failed (${response.status})`)
@@ -47,42 +48,28 @@ export class HttpGfRuntime implements GfRuntime {
   }
 }
 
-/** Serves GF output precomputed by scripts/precompute.mjs, one shard per tense; no GF server needed. */
-export class StaticGfRuntime implements GfRuntime {
-  readonly label = 'GF 3.11 · precomputed'
-  private readonly shards = new Map<string, Promise<Record<string, RawLinearization[]>>>()
+/** Linearizes in the browser with gf-typescript over HazelGF.json; no GF server needed. */
+export class BrowserGfRuntime implements GfRuntime {
+  readonly label = 'GF 3.11 · in browser'
+  private grammar?: Promise<BrowserGrammar>
 
-  constructor(private readonly baseUrl = `${import.meta.env.BASE_URL}static/`) {}
+  constructor(private readonly grammarUrl = `${import.meta.env.BASE_URL}HazelGF.json`) {}
 
-  async loadGrammar(): Promise<unknown> {
-    const response = await fetch(`${this.baseUrl}grammar.json`)
-    if (!response.ok) throw new Error(`grammar.json request failed (${response.status})`)
-    return response.json()
+  loadGrammar(): Promise<BrowserGrammar> {
+    this.grammar ??= fetch(this.grammarUrl).then(async response => {
+      if (!response.ok) throw new Error(`HazelGF.json request failed (${response.status})`)
+      return loadBrowserGrammar(await response.json())
+    })
+    this.grammar.catch(() => { this.grammar = undefined })
+    return this.grammar
   }
 
   async linearize(term: string, root: Node, revision: number): Promise<LinearizationProjection[]> {
-    const raw = (await this.shard(tenseOf(term)))[term]
-    if (!raw) throw new Error(`No precomputed linearization for ${term}`)
-    return project(raw, root, revision)
-  }
-
-  private shard(tense: string): Promise<Record<string, RawLinearization[]>> {
-    let shard = this.shards.get(tense)
-    if (!shard) {
-      shard = fetch(`${this.baseUrl}linearizations-${tense}.json`).then(response => {
-        if (!response.ok) throw new Error(`linearizations-${tense}.json request failed (${response.status})`)
-        return response.json() as Promise<Record<string, RawLinearization[]>>
-      })
-      shard.catch(() => this.shards.delete(tense))
-      this.shards.set(tense, shard)
-    }
-    return shard
+    return project(linearizeInBrowser(await this.loadGrammar(), term, root, [...SUPPORTED]), root, revision)
   }
 }
 
-/** A complete term is `MkS <Temp> <Pol> (...)`; the Temp constructor names its shard. */
-export const tenseOf = (term: string) => term.split(' ')[1]
-
+/** `http` talks to a local GF server (npm run dev); `browser` runs GF in the page (the static site). */
 export function createRuntime(): GfRuntime {
-  return import.meta.env.VITE_GF_MODE === 'static' ? new StaticGfRuntime() : new HttpGfRuntime()
+  return import.meta.env.VITE_GF_MODE === 'browser' ? new BrowserGfRuntime() : new HttpGfRuntime()
 }

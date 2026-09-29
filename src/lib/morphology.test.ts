@@ -7,13 +7,14 @@ import { normalizeLinearizations, type RawLinearization } from './projection'
 import type { Paradigms } from './morphology'
 import type { Morpheme, Node } from './model'
 
-const staticDir = resolve(__dirname, '../../public/static')
+const staticDir = resolve(__dirname, '../../oracle')
+const paradigmsFile = resolve(__dirname, '../../public/static/paradigms.json')
 const cache = new Map<string, unknown>()
 const read = <T>(name: string): T => {
   if (!cache.has(name)) cache.set(name, JSON.parse(readFileSync(resolve(staticDir, name), 'utf8')))
   return cache.get(name) as T
 }
-const paradigms = read<Paradigms>('paradigms.json')
+const paradigms = JSON.parse(readFileSync(paradigmsFile, 'utf8')) as Paradigms
 const { shards } = read<{ shards: string[] }>('index.json')
 
 let serial = 0

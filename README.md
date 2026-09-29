@@ -12,11 +12,11 @@ occurrences; morphology annotations expose fused and empty exponents.
 
 **Try it:** <https://wmacmil.github.io/hazel-gf/> — no install needed.
 
-The hosted version needs no GF server. The grammar has no recursion, so it
-has exactly 16416 complete sentences (8 tenses × 2 polarities × 1026
-clauses); `npm run precompute` asks GF for every one of them and stores GF's
-bracketed output in `public/static/`, one file per tense. The page then looks
-up the tree you build instead of calling GF. Incomplete trees are
+The hosted version needs no GF server: GF runs in the page.
+`gf --make --output-format=json` compiles the grammar to `HazelGF.json`
+(123 KB gzipped), and the vendored GF TypeScript runtime
+(`vendor/gf-typescript`, LGPL-3.0) linearizes it in the browser, tagging
+every token with the tree node that emitted it. Incomplete trees are
 previewed in the browser either way.
 
 ## Run
@@ -77,14 +77,19 @@ German's finite verb always agrees, and Swedish shows it as `∅`.
 ## Static build (GitHub Pages)
 
 ```sh
-npm run precompute          # needs GF + RGL; regenerates public/static/*.json
-npm run preview:static      # static bundle, no GF server
+npm run preview:static      # static bundle, GF in the browser
+npm run oracle              # needs GF + RGL; regenerates oracle/ and public/static/paradigms.json
 ```
 
-`npm run deploy` type-checks, tests, builds the static bundle and force-pushes
-`dist/` to the `gh-pages` branch, which GitHub Pages serves. Re-run
-`npm run precompute` and commit the result whenever the grammar changes;
-`src/lib/static.test.ts` fails if the table no longer matches the grammar.
+`npm run deploy` compiles the grammar, type-checks, tests, builds the static
+bundle and force-pushes `dist/` to the `gh-pages` branch, which GitHub Pages
+serves.
+
+`oracle/` holds the GF *server's* bracketed output for all 16416 PP-free
+sentences, sharded by tense. It is not shipped: `runtime.conformance.test.ts`
+checks that the browser runtime gives the same text, the same token
+provenance, and the same morpheme projection. Re-run `npm run oracle` and
+commit when the grammar or lexicon changes.
 
 ## Verify
 

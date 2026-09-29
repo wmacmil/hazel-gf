@@ -11,6 +11,8 @@ export type RawBracket = RawToken | {
   fid: number
   index: number
   fun: string
+  /** Exact editor node, when the runtime knows it (the browser runtime's tag paths). */
+  node?: NodeId
   children?: RawBracket[]
 }
 export type RawLinearization = { to: string; text: string; brackets: RawBracket[] }
@@ -18,14 +20,14 @@ export type RawLinearization = { to: string; text: string; brackets: RawBracket[
 const LANGUAGES: LanguageId[] = ['HazelGFEng', 'HazelGFGer', 'HazelGFSwe']
 const isToken = (value: RawBracket): value is RawToken => 'token' in value
 
-type LeafGroup = { fun: string; category: string; tokens: string[] }
+type LeafGroup = { fun: string; category: string; node?: NodeId; tokens: string[] }
 
 function bracketLeaves(brackets: RawBracket[]): LeafGroup[] {
   const groups: LeafGroup[] = []
   const visit = (bracket: RawBracket) => {
     if (isToken(bracket)) return
     const direct = (bracket.children ?? []).filter(isToken).map(child => child.token)
-    if (direct.length) groups.push({ fun: bracket.fun, category: bracket.cat, tokens: direct })
+    if (direct.length) groups.push({ fun: bracket.fun, category: bracket.cat, node: bracket.node, tokens: direct })
     for (const child of bracket.children ?? []) if (!isToken(child)) visit(child)
   }
   brackets.forEach(visit)
@@ -198,13 +200,15 @@ function normalizeOne(raw: RawLinearization, root: Node, revision: number, parad
     list.push(node)
     nodesByConstructor.set(node.constructor, list)
   }
+  const nodeById = new Map(preorder(root).filter((node): node is ApplyNode => node.kind === 'apply').map(node => [node.id, node]))
   const occurrence = new Map<string, number>()
   let serial = 0
   const base: LinearizedSegment[] = []
   for (const leaf of bracketLeaves(raw.brackets)) {
+    // Exact node when the runtime supplies it; otherwise the n-th node with that constructor.
     const index = occurrence.get(leaf.fun) ?? 0
     const candidates = nodesByConstructor.get(leaf.fun) ?? []
-    const node = candidates[Math.min(index, Math.max(0, candidates.length - 1))]
+    const node = (leaf.node && nodeById.get(leaf.node)) || candidates[Math.min(index, Math.max(0, candidates.length - 1))]
     occurrence.set(leaf.fun, index + 1)
     for (const token of leaf.tokens) {
       base.push({

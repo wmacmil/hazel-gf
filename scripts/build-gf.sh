@@ -13,7 +13,9 @@ fi
 
 mkdir -p "$app_dir/build/gfo" "$app_dir/public"
 
-gf --make --jobs=1 \
+# --output-format=json writes both HazelGF.pgf (GF server) and HazelGF.json
+# (browser runtime, vendor/gf-typescript).
+gf --make --jobs=1 --output-format=json \
   --path="$app_dir/grammar:$rgl_dist" \
   --gfo-dir="$app_dir/build/gfo" \
   --output-dir="$app_dir/public" \

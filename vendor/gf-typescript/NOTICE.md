@@ -1,0 +1,11 @@
+# gf-typescript (vendored)
+
+- Source: https://github.com/GrammaticalFramework/gf-typescript
+- Commit: af978f4 (2022-07-04), files `src/index.ts` and `src/pgf-json.ts`, unmodified
+  except for a `// @ts-nocheck` header so this app's strict type-check skips them.
+- Author: John J. Camilleri. License: LGPL-3.0-or-later
+  (https://www.gnu.org/licenses/lgpl-3.0.html), as declared in the upstream package.json.
+
+It is the maintained TypeScript port of GF's `gflib.js` runtime. The app uses it to
+linearize (and later parse) GF trees in the browser from `HazelGF.json`
+(`gf --make --output-format=json`), so the static site needs no GF server.

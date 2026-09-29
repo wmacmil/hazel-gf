@@ -5,14 +5,16 @@ import { agreementExample, exampleDocument } from './examples'
 import { fromGfTerm, toGfTerm } from './editor'
 import { producers } from './grammar'
 import { normalizeLinearizations, type RawLinearization } from './projection'
-import { tenseOf } from './gf'
 import { phraseBoxes } from './boxes'
 import type { ApplyNode, CategoryId } from './model'
 import type { Paradigms } from './morphology'
 
-const staticDir = resolve(__dirname, '../../public/static')
+/** A complete term is `MkS <Temp> <Pol> (...)`; the Temp constructor names its oracle shard. */
+const tenseOf = (term: string) => term.split(' ')[1]
+const staticDir = resolve(__dirname, '../../oracle')
+const paradigmsFile = resolve(__dirname, '../../public/static/paradigms.json')
 const { shards } = JSON.parse(readFileSync(resolve(staticDir, 'index.json'), 'utf8')) as { shards: string[] }
-const paradigms = JSON.parse(readFileSync(resolve(staticDir, 'paradigms.json'), 'utf8')) as Paradigms
+const paradigms = JSON.parse(readFileSync(paradigmsFile, 'utf8')) as Paradigms
 const table: Record<string, RawLinearization[]> = Object.assign({}, ...shards.map(tense =>
   JSON.parse(readFileSync(resolve(staticDir, `linearizations-${tense}.json`), 'utf8'))))
 
