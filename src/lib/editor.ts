@@ -100,6 +100,30 @@ export function wrapFocused(document: EditorDocument, constructorId: Constructor
   return { ...document, root: replaceNode(document.root, focus.id, wrapper), focus: wrapper.id }
 }
 
+/** Why a subtree cannot be plugged into `parent`'s input `port`, or undefined if it can. */
+export function moveProblem(root: Node, subtreeId: NodeId, parentId: NodeId, port: number): string | undefined {
+  const subtree = findNode(root, subtreeId)
+  const parent = findNode(root, parentId)
+  if (!subtree || !parent || parent.kind !== 'apply') return 'Unknown node'
+  if (subtree.id === root.id) return 'The root has no output to move'
+  const slot = parent.children[port]
+  const expected = constructorById.get(parent.constructor)?.inputs[port]
+  if (!slot || !expected) return 'Unknown input port'
+  if (slot.kind !== 'hole') return 'A subtree can only be plugged into a hole'
+  if (outputOf(subtree) !== expected) return `Sort ${outputOf(subtree)} does not match port ${expected}`
+  if (findNode(subtree, parent.id)) return 'A subtree cannot be plugged into itself'
+}
+
+/** Move a subtree into a typed hole elsewhere; its old slot becomes a hole of the same sort. */
+export function moveSubtree(document: EditorDocument, subtreeId: NodeId, parentId: NodeId, port: number): EditorDocument {
+  const problem = moveProblem(document.root, subtreeId, parentId, port)
+  if (problem) throw new Error(problem)
+  const subtree = findNode(document.root, subtreeId)!
+  const slot = (findNode(document.root, parentId) as ApplyNode).children[port]
+  const vacated = replaceNode(document.root, subtree.id, hole(outputOf(subtree)))
+  return { ...document, root: replaceNode(vacated, slot.id, subtree), focus: subtree.id }
+}
+
 export function moveFocus(document: EditorDocument, direction: 'parent' | 'firstChild' | 'previous' | 'next'): EditorDocument {
   const path = pathTo(document.root, document.focus)
   if (!path) return document

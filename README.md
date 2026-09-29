@@ -46,6 +46,20 @@ Worked trees can also be opened directly:
 If the RGL is somewhere other than `~/code/gf/gf-rgl/dist/alltenses`, set
 `GF_RGL_DIST` before building.
 
+## Operad views
+
+The abstract tree can be drawn as the recursive **tree**, as a SvelteFlow
+**flow** wiring diagram, or **both** side by side (the default). Choose with
+the toggle above the tree, or with `?operad=tree|flow|both`; the choice is
+remembered. Both views render the same `OperadCard` and share focus and hover.
+
+In the flow view every input port is a typed handle. Dragging a node's top
+(output) handle onto a hole's port moves that subtree there and leaves a hole
+of the same sort behind. `isValidConnection` asks the kernel
+(`editor.ts: moveProblem`), and the canvas shows the reason for a refused
+wire, e.g. *Sort VP does not match port NP*. The canvas is a projection of the
+document, rebuilt from the tree on each change, never edited in place.
+
 ## Tense
 
 `MkS : (Temp, Pol, Cl) → S`. `Temp` has eight leaves—present, past, future,

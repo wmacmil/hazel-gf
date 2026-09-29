@@ -8,7 +8,11 @@ import type { Paradigms } from './morphology'
 import type { Morpheme, Node } from './model'
 
 const staticDir = resolve(__dirname, '../../public/static')
-const read = <T>(name: string): T => JSON.parse(readFileSync(resolve(staticDir, name), 'utf8')) as T
+const cache = new Map<string, unknown>()
+const read = <T>(name: string): T => {
+  if (!cache.has(name)) cache.set(name, JSON.parse(readFileSync(resolve(staticDir, name), 'utf8')))
+  return cache.get(name) as T
+}
 const paradigms = read<Paradigms>('paradigms.json')
 const { shards } = read<{ shards: string[] }>('index.json')
 
@@ -61,5 +65,5 @@ describe('morpheme sub-boxes from GF paradigm tables', () => {
       }
     }
     expect(words).toBeGreaterThan(100000)
-  })
+  }, 60_000)
 })

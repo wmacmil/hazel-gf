@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   clearFocused, fillFocused, findNode, isComplete, newDocument, outputOf, toGfTerm,
-  swapLeaf, validateDocument, wrapFocused,
+  moveProblem, moveSubtree, swapLeaf, validateDocument, wrapFocused,
 } from './editor'
+import type { ApplyNode } from './model'
 import { exampleDocument } from './examples'
 
 describe('typed structure editing', () => {
@@ -38,6 +39,24 @@ describe('typed structure editing', () => {
     expect(findNode(past, tense.id)).toMatchObject({ constructor: 'Past', output: 'Temp' })
     expect(() => swapLeaf(root, tense.id, 'Negative')).toThrow(/does not match/)
     expect(() => swapLeaf(root, root.id, 'Past')).toThrow(/leaf/)
+  })
+
+  it('moves a subtree only into a free hole of the same sort, vacating its old slot', () => {
+    const example = exampleDocument()
+    const root = example.root as ApplyNode
+    const clause = root.children[2] as ApplyNode
+    const [subject, vp] = clause.children as [ApplyNode, ApplyNode]
+    const object = vp.children[1]
+    // Empty the subject slot, then move the object NP into it: "the woman sees ⟦NP⟧".
+    const cleared = clearFocused({ ...example, focus: subject.id })
+    const moved = moveSubtree(cleared, object.id, clause.id, 0)
+    const movedClause = (moved.root as ApplyNode).children[2] as ApplyNode
+    expect(movedClause.children[0].id).toBe(object.id)
+    expect((movedClause.children[1] as ApplyNode).children[1]).toMatchObject({ kind: 'hole', expected: 'NP' })
+    expect(moved.focus).toBe(object.id)
+    expect(moveProblem(cleared.root, vp.id, clause.id, 0)).toMatch(/does not match/)
+    expect(moveProblem(example.root, object.id, clause.id, 0)).toMatch(/only be plugged into a hole/)
+    expect(moveProblem(cleared.root, clause.id, clause.id, 0)).toMatch(/itself|does not match/)
   })
 
   it('serializes complete trees and refuses holes', () => {

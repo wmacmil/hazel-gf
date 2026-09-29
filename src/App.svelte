@@ -3,11 +3,12 @@
   import TreeNode from './components/TreeNode.svelte'
   import AlgebraRow from './components/AlgebraRow.svelte'
   import TenseVariations from './components/TenseVariations.svelte'
+  import OperadFlow from './components/OperadFlow.svelte'
   import { createRuntime } from './lib/gf'
   import { producers, profile, wrappers } from './lib/grammar'
   import {
     clearFocused, fillFocused, findNode, isComplete, moveFocus, newDocument, outputOf,
-    swapLeaf, toGfTerm, validateDocument, wrapFocused,
+    moveSubtree, swapLeaf, toGfTerm, validateDocument, wrapFocused,
   } from './lib/editor'
   import { agreementExample, exampleDocument } from './lib/examples'
   import { partialProjections } from './lib/projection'
@@ -15,6 +16,25 @@
   import { CATEGORY_COLORS, type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
 
   const STORAGE_KEY = 'hazel-gf-document-v2'
+
+  /** How the operad is drawn: the recursive tree, the SvelteFlow wiring diagram, or both side by side. */
+  type OperadView = 'tree' | 'flow' | 'both'
+  const OPERAD_VIEWS: OperadView[] = ['tree', 'flow', 'both']
+  const VIEW_KEY = 'hazel-gf-operad-view'
+  let operadView = $state<OperadView>('both')
+
+  function setOperadView(view: OperadView) {
+    operadView = view
+    localStorage.setItem(VIEW_KEY, view)
+    const url = new URL(location.href)
+    url.searchParams.set('operad', view)
+    window.history.replaceState(null, '', url)
+  }
+
+  function move(subtree: NodeId, parent: NodeId, port: number) {
+    try { commit(moveSubtree(document, subtree, parent, port)) }
+    catch (cause) { error = cause instanceof Error ? cause.message : 'Move failed' }
+  }
   const runtime = createRuntime()
   let document = $state<EditorDocument>(newDocument())
   let history = $state<EditorDocument[]>([])
@@ -146,6 +166,8 @@
   }
 
   onMount(() => {
+    const requested = new URLSearchParams(location.search).get('operad') ?? localStorage.getItem(VIEW_KEY)
+    if (OPERAD_VIEWS.includes(requested as OperadView)) operadView = requested as OperadView
     const preset = new URLSearchParams(location.search).get('example')
     if (preset === 'see') document = exampleDocument()
     else if (preset === 'agreement') document = agreementExample()
@@ -219,6 +241,11 @@
   <section class="workspace">
     <div class="workspace-bar">
       <div><span class="kicker">abstract syntax</span><code>{isComplete(document.root) ? toGfTerm(document.root) : 'incomplete but well-typed'}</code></div>
+      <div class="view-toggle" role="radiogroup" aria-label="Operad view">
+        {#each OPERAD_VIEWS as view}
+          <button role="radio" aria-checked={operadView === view} class:on={operadView === view} onclick={() => setOperadView(view)}>{view}</button>
+        {/each}
+      </div>
       <div class="document-actions">
         <button onclick={downloadDocument}>export JSON</button>
         <button onclick={() => importInput.click()}>import</button>
@@ -227,9 +254,19 @@
       </div>
     </div>
 
-    <div class="tree-scroll">
-      <span class="surface-label operad-label">operad · abstract syntax · hue = sort</span>
-      <TreeNode node={document.root} focus={document.focus} {linked} onFocus={focus} onHover={ids => linked = ids} />
+    <div class="operad-views {operadView}">
+      {#if operadView !== 'flow'}
+        <div class="tree-scroll">
+          <span class="surface-label operad-label">operad · tree</span>
+          <TreeNode node={document.root} focus={document.focus} {linked} onFocus={focus} onHover={ids => linked = ids} />
+        </div>
+      {/if}
+      {#if operadView !== 'tree'}
+        <div class="flow-panel">
+          <span class="surface-label operad-label">operad · svelteflow wiring</span>
+          <OperadFlow root={document.root} focus={document.focus} {linked} onFocus={focus} onHover={ids => linked = ids} onMove={move} />
+        </div>
+      {/if}
     </div>
 
     <div class="projections">
