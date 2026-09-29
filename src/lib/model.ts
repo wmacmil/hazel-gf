@@ -31,6 +31,15 @@ export type EditorDocument = {
 
 export type LanguageId = 'HazelGFEng' | 'HazelGFGer' | 'HazelGFSwe'
 
+/** A piece of a word: stem, (changed) stem, affix, function word, or an empty exponent ∅. */
+export type Morpheme = {
+  text: string
+  role: 'stem' | 'changed-stem' | 'affix' | 'function' | 'zero'
+  features: string[]
+  /** The lexical leaf plus the nodes that control this piece (Temp, subject, Det, Pol). */
+  realizedBy: NodeId[]
+}
+
 export type LinearizedSegment = {
   id: string
   text: string
@@ -38,6 +47,7 @@ export type LinearizedSegment = {
   realizedBy: NodeId[]
   categories: CategoryId[]
   featureValues: string[]
+  morphemes?: Morpheme[]
 }
 
 export type LinearizationProjection = {
@@ -49,19 +59,25 @@ export type LinearizationProjection = {
   source: 'gf' | 'partial'
 }
 
-export const CATEGORY_COLORS: Record<CategoryId, { ink: string; wash: string }> = {
-  S: { ink: '#8a341b', wash: '#fbe7df' },
-  Cl: { ink: '#a34f17', wash: '#f9e9d8' },
-  NP: { ink: '#175f72', wash: '#dff2f5' },
-  VP: { ink: '#27633a', wash: '#e3f3e7' },
-  CN: { ink: '#1d6691', wash: '#e1eff8' },
-  N: { ink: '#2456a4', wash: '#e4ecfb' },
-  V: { ink: '#247049', wash: '#e1f2e8' },
-  V2: { ink: '#16705f', wash: '#def3ee' },
-  Det: { ink: '#8b4e00', wash: '#f8eaca' },
-  Pron: { ink: '#6b43a5', wash: '#eee5fa' },
-  Pol: { ink: '#a22f5c', wash: '#f8e1eb' },
-  Temp: { ink: '#5b4a9e', wash: '#ebe7f8' },
+/**
+ * Operad colors: one hue per sort (GF category), all in the cool half of the
+ * wheel (120°–276°). `glow` is for the dark operad panel, `ink`/`wash` for the
+ * sort's hairline image on the algebra's paper. Feature colors live in the
+ * warm half (style.ts), so the two channels can never be confused.
+ */
+export const CATEGORY_COLORS: Record<CategoryId, { ink: string; glow: string; wash: string }> = {
+  V2: { ink: '#239523', glow: '#84f584', wash: '#e7f9e7' }, // 120°
+  V: { ink: '#23953d', glow: '#84f59f', wash: '#e7f9eb' }, // 134°
+  VP: { ink: '#239558', glow: '#84f5b9', wash: '#e7f9ef' }, // 148°
+  Det: { ink: '#23957a', glow: '#84f5db', wash: '#e7f9f5' }, // 166°
+  NP: { ink: '#239195', glow: '#84f1f5', wash: '#e7f8f9' }, // 182°
+  CN: { ink: '#237495', glow: '#84d5f5', wash: '#e7f4f9' }, // 197°
+  N: { ink: '#235895', glow: '#84b9f5', wash: '#e7eff9' }, // 212°
+  Pron: { ink: '#233d95', glow: '#849ff5', wash: '#e7ebf9' }, // 226°
+  S: { ink: '#232395', glow: '#8484f5', wash: '#e7e7f9' }, // 240°
+  Cl: { ink: '#3a2395', glow: '#9b84f5', wash: '#eae7f9' }, // 252°
+  Temp: { ink: '#502395', glow: '#b184f5', wash: '#eee7f9' }, // 264°
+  Pol: { ink: '#672395', glow: '#c884f5', wash: '#f2e7f9' }, // 276°
 }
 
 export const languageLabels: Record<LanguageId, string> = {

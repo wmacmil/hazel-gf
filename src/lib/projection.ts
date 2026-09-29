@@ -1,5 +1,6 @@
 import { partialLexicon } from './grammar'
 import { outputOf, preorder } from './editor'
+import { segmentWord, type Paradigms } from './morphology'
 import type {
   ApplyNode, CategoryId, LanguageId, LinearizationProjection, LinearizedSegment, Node, NodeId,
 } from './model'
@@ -61,11 +62,6 @@ function findApply(node: Node, constructor: string): ApplyNode[] {
   return preorder(node).filter((item): item is ApplyNode => item.kind === 'apply' && item.constructor === constructor)
 }
 
-const swedishDefinite: Record<string, [string, string]> = {
-  ManN: ['man', 'nen'], WomanN: ['kvinna', 'n'], HouseN: ['hus', 'et'],
-  DogN: ['hund', 'en'], CatN: ['katt', 'en'], BookN: ['bok', 'en'],
-}
-
 const NEGATION: Record<LanguageId, RegExp> = {
   HazelGFEng: /^(not|\w+n't)$/i, HazelGFGer: /^nicht$/i, HazelGFSwe: /^inte$/i,
 }
@@ -74,7 +70,7 @@ const isBareNegation = (language: LanguageId, text: string) =>
   isNegationWord(language, text) && !/\w+n't$/i.test(text)
 
 /** Tense label carried by the finite element, and whether the tense is anterior (perfect). */
-const TENSES: Record<string, { label: string; perfect: boolean }> = {
+export const TENSES: Record<string, { label: string; perfect: boolean }> = {
   Present: { label: 'PRES', perfect: false }, Past: { label: 'PAST', perfect: false },
   Future: { label: 'FUT', perfect: false }, Conditional: { label: 'COND', perfect: false },
   PresentPerfect: { label: 'PRES', perfect: true }, PastPerfect: { label: 'PAST', perfect: true },
@@ -122,18 +118,11 @@ function annotateVerbGroup(language: LanguageId, root: Node, segments: Linearize
 
   const subjectHead = preorder(subject).find(node => node.kind === 'apply' && THIRD_SINGULAR.includes(node.constructor))
   if (!subjectHead) return
-  if (language === 'HazelGFSwe') {
-    segments.splice(segments.indexOf(finite) + 1, 0, {
-      id: `${language}-zero-3sg`, text: '∅', role: 'zero',
-      realizedBy: [subjectHead.id, verb.id], categories: [outputOf(verb)],
-      featureValues: ['3SG'],
-    })
-  } else if (language === 'HazelGFGer' || !tense || tense.label === 'PRES') {
-    finite.featureValues.push('3SG')
-  }
+  // Swedish never marks agreement; morphology renders its 3SG as ∅ inside the finite word.
+  if (language !== 'HazelGFEng' || !tense || tense.label === 'PRES') finite.featureValues.push('3SG')
 }
 
-function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[]): LinearizedSegment[] {
+function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms?: Paradigms): LinearizedSegment[] {
   let result = segments.map(segment => ({ ...segment, realizedBy: [...segment.realizedBy], categories: [...segment.categories], featureValues: [...segment.featureValues] }))
 
   for (const det of findApply(root, 'Definite')) {
@@ -155,27 +144,52 @@ function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[
   }
 
   if (language === 'HazelGFSwe') {
+    // Suffixed definiteness (kvinna·n): the noun word also realizes the Det node.
     for (const detCn of findApply(root, 'DetCN')) {
       const [det, cn] = detCn.children
-      if (det.kind !== 'apply' || det.constructor !== 'Definite' || cn.kind !== 'apply' || cn.constructor !== 'UseN') continue
-      const noun = cn.children[0]
-      if (noun.kind !== 'apply') continue
-      const split = swedishDefinite[noun.constructor]
-      const index = result.findIndex(segment => segment.realizedBy.includes(noun.id))
-      if (!split || index < 0 || result[index].text.toLocaleLowerCase('sv') !== `${split[0]}${split[1]}`.toLocaleLowerCase('sv')) continue
-      const original = result[index]
-      result.splice(index, 1,
-        { ...original, id: `${original.id}-root`, text: split[0], realizedBy: [noun.id], categories: ['N'], featureValues: [] },
-        { ...original, id: `${original.id}-def`, text: split[1], realizedBy: [noun.id, det.id], categories: ['N', 'Det'], featureValues: ['DEF'] },
-      )
+      if (det.kind !== 'apply' || det.constructor !== 'Definite' || cn.kind !== 'apply') continue
+      const noun = preorder(cn).find(node => node.kind === 'apply' && node.output === 'N')
+      const segment = noun && result.find(item => item.realizedBy[0] === noun.id)
+      if (segment && !result.some(item => item.realizedBy[0] === det.id)) link(segment, det, 'DEF')
     }
   }
 
   annotateVerbGroup(language, root, result)
+  if (paradigms) attachMorphemes(language, root, result, paradigms)
   return result
 }
 
-function normalizeOne(raw: RawLinearization, root: Node, revision: number): LinearizationProjection {
+const LEXICAL_CATEGORIES = new Set(['N', 'V', 'V2', 'Pron', 'Det'])
+
+/** Split every overt word into morpheme sub-boxes, each linked to the nodes that control it. */
+function attachMorphemes(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms: Paradigms) {
+  const temp = findApply(root, 'MkS')[0]?.children[0]
+  const pol = findApply(root, 'Negative')[0]
+  const subject = findApply(root, 'PredVP')[0]?.children[0]
+  const subjectHead = subject && preorder(subject).find(node => node.kind === 'apply' && THIRD_SINGULAR.includes(node.constructor))
+  const determinerOf = new Map<NodeId, NodeId>()
+  for (const detCn of findApply(root, 'DetCN')) {
+    const noun = preorder(detCn.children[1]).find(node => node.kind === 'apply' && node.output === 'N')
+    if (noun) determinerOf.set(noun.id, detCn.children[0].id)
+  }
+  const nodes = new Map(preorder(root).map(node => [node.id, node]))
+  for (const segment of segments) {
+    if (segment.role !== 'overt') continue
+    const origin = nodes.get(segment.realizedBy[0])
+    const lexeme = origin?.kind === 'apply' && !origin.children.length && LEXICAL_CATEGORIES.has(origin.output)
+      ? { id: origin.id, constructor: origin.constructor, category: origin.output }
+      : undefined
+    segment.morphemes = segmentWord({
+      language, lexeme, text: segment.text, features: segment.featureValues, realizedBy: segment.realizedBy,
+      controllers: {
+        tense: temp?.id, aspect: temp?.id, agreement: subjectHead?.id, polarity: pol?.id,
+        definiteness: lexeme ? determinerOf.get(lexeme.id) : undefined,
+      },
+    }, paradigms)
+  }
+}
+
+function normalizeOne(raw: RawLinearization, root: Node, revision: number, paradigms?: Paradigms): LinearizationProjection {
   const language = raw.to as LanguageId
   const nodesByConstructor = new Map<string, ApplyNode[]>()
   for (const node of preorder(root)) {
@@ -203,12 +217,12 @@ function normalizeOne(raw: RawLinearization, root: Node, revision: number): Line
       })
     }
   }
-  const segments = annotate(language, root, inSurfaceOrder(base, raw.text))
+  const segments = annotate(language, root, inSurfaceOrder(base, raw.text), paradigms)
   return { language, text: raw.text, segments, nodeYields: buildYields(root, segments), revision, source: 'gf' }
 }
 
-export function normalizeLinearizations(raw: RawLinearization[], root: Node, revision: number): LinearizationProjection[] {
-  return raw.map(item => normalizeOne(item, root, revision))
+export function normalizeLinearizations(raw: RawLinearization[], root: Node, revision: number, paradigms?: Paradigms): LinearizationProjection[] {
+  return raw.map(item => normalizeOne(item, root, revision, paradigms))
 }
 
 function partialSegments(node: Node, language: LanguageId, serial: { value: number }): LinearizedSegment[] {

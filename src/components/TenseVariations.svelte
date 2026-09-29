@@ -3,17 +3,22 @@
   import { producers } from '../lib/grammar'
   import { swapLeaf, toGfTerm } from '../lib/editor'
   import { languageLabels, type ApplyNode, type ConstructorId, type LinearizationProjection, type NodeId } from '../lib/model'
-  import { segmentStyle } from '../lib/style'
+  import Word from './Word.svelte'
+  import { allowedTenses } from '../lib/constraints'
 
   let {
-    root, runtime, linked = [], onPick, onHover,
+    root, runtime, linked = [], pinned = [], onPick, onHover, onPin,
   }: {
     root: ApplyNode
     runtime: GfRuntime
     linked?: NodeId[]
+    pinned?: string[]
     onPick: (tense: ConstructorId) => void
     onHover: (ids: NodeId[]) => void
+    onPin: (features: string[]) => void
   } = $props()
+
+  const allowed = $derived(new Set(allowedTenses(pinned).map(tense => tense.id)))
 
   type Row = { tense: ConstructorId; label: string; projections: LinearizationProjection[] }
 
@@ -44,7 +49,7 @@
 <section class="variations">
   <div class="heading">
     <div><span class="kicker">vary one leaf</span><h2>Tense variations</h2></div>
-    <p>The same tree with only its <b>Temp</b> leaf swapped. Click a row to adopt that tense.</p>
+    <p>The same tree with only its <b>Temp</b> leaf swapped. Click a tense to adopt it; click a morpheme to pin its feature — rows it rules out fade.</p>
   </div>
   {#if error}<p class="error">{error}</p>{/if}
   <div class="grid" role="table" aria-label="Tense variations">
@@ -55,25 +60,16 @@
       {/each}
     </div>
     {#each rows as row (row.tense)}
-      <button class="row" class:current={row.tense === slot.constructor} role="row" onclick={() => onPick(row.tense)}>
-        <span class="tense" role="rowheader">{row.label}</span>
+      <div class="row" class:current={row.tense === slot.constructor} class:excluded={!allowed.has(row.tense)} role="row">
+        <button class="tense" role="rowheader" onclick={() => onPick(row.tense)} title="adopt this tense">{row.label} ↵</button>
         {#each row.projections as projection (projection.language)}
           <span class="cell" role="cell">
             {#each projection.segments as segment (segment.id)}
-              <span
-                class="seg"
-                class:zero={segment.role === 'zero'}
-                class:lit={lit(projection, segment.id)}
-                style={segmentStyle(segment.categories)}
-                role="presentation"
-                onmouseenter={() => onHover(segment.realizedBy)}
-                onmouseleave={() => onHover([])}
-                title={segment.featureValues.join(' + ')}
-              >{segment.text}{#if segment.featureValues.length}<small>{segment.featureValues.join('·')}</small>{/if}</span>
+              <Word {segment} compact {pinned} active={lit(projection, segment.id)} {onHover} {onPin} />
             {/each}
           </span>
         {/each}
-      </button>
+      </div>
     {/each}
   </div>
 </section>
@@ -90,16 +86,11 @@
     border: 1px solid transparent; border-radius: .45rem; cursor: pointer;
   }
   .row:not(.head):hover { background: #f2eee7; }
+  .row.excluded { opacity: .28; }
   .row.current { background: #ebe7f8; border-color: #5b4a9e55; }
   .row.head { cursor: default; color: #8a8175; font: .62rem ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
-  .tense { color: #5b4a9e; font: 650 .8rem ui-monospace, monospace; }
-  .cell { display: flex; flex-wrap: wrap; gap: .2rem; align-items: baseline; }
-  .seg {
-    display: inline-flex; align-items: baseline; gap: .18rem; padding: .08rem .28rem; border-radius: .3rem;
-    color: var(--seg-ink, #504a42); background: var(--seg-wash, #f2eee7); font: 600 .88rem Georgia, serif;
-  }
-  .seg small { font: 700 .45rem ui-monospace, monospace; }
-  .seg.zero { opacity: .65; background: transparent; outline: 1px dashed currentColor; }
-  .seg.lit { outline: 2px solid #25231f; outline-offset: 1px; }
+  .tense { padding: .2rem .3rem; border: 0; border-radius: .3rem; background: transparent; color: #5a3e8c; font: 650 .74rem ui-monospace, monospace; text-align: left; cursor: pointer; }
+  .tense:hover { background: #ebe6f6; }
+  .cell { display: flex; flex-wrap: wrap; gap: .25rem; align-items: end; }
   .error { color: #a22f2f; font-size: .8rem; }
 </style>

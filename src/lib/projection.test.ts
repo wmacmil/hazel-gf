@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { agreementExample, exampleDocument } from './examples'
 import { findNode, preorder } from './editor'
 import { normalizeLinearizations, partialProjections, type RawBracket } from './projection'
+import type { Paradigms } from './morphology'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+const paradigms = JSON.parse(readFileSync(resolve(__dirname, '../../public/static/paradigms.json'), 'utf8')) as Paradigms
 
 const bracket = (funName: string, cat: string, ...children: RawBracket[]): RawBracket =>
   ({ fun: funName, cat, fid: 0, index: 0, children })
@@ -18,7 +23,7 @@ describe('linearization provenance', () => {
     expect(projections.every(item => item.segments.some(segment => segment.text === '⟦CN⟧' && segment.role === 'hole'))).toBe(true)
   })
 
-  it('splits Swedish suffixed definiteness into its realization fiber', () => {
+  it('splits Swedish suffixed definiteness into a morpheme that also realizes the Det node', () => {
     const document = exampleDocument()
     const raw = [{
       to: 'HazelGFSwe', text: 'jag ser kvinnan', brackets: [
@@ -29,16 +34,16 @@ describe('linearization provenance', () => {
         ),
       ],
     }]
-    const [projection] = normalizeLinearizations(raw, document.root, 3)
-    const suffix = projection.segments.find(segment => segment.text === 'n' && segment.featureValues.includes('DEF'))
+    const [projection] = normalizeLinearizations(raw, document.root, 3, paradigms)
     const definite = preorder(document.root).find(node => node.kind === 'apply' && node.constructor === 'Definite')!
     const woman = preorder(document.root).find(node => node.kind === 'apply' && node.constructor === 'WomanN')!
-    expect(projection.segments.map(segment => segment.text)).toEqual(['jag', 'ser', 'kvinna', 'n'])
-    expect(suffix?.realizedBy).toEqual([woman.id, definite.id])
-    expect(projection.nodeYields[definite.id]).toContain(suffix?.id)
+    const noun = projection.segments.find(segment => segment.text === 'kvinnan')!
+    expect(noun.morphemes?.map(piece => piece.text)).toEqual(['kvinna', 'n'])
+    expect(noun.morphemes?.[1]).toMatchObject({ role: 'affix', features: ['DEF'], realizedBy: [woman.id, definite.id] })
+    expect(projection.nodeYields[definite.id]).toContain(noun.id)
   })
 
-  it('shows Swedish person agreement as an empty exponent', () => {
+  it('shows Swedish person agreement as an empty exponent inside the finite verb, linked to the subject', () => {
     const document = agreementExample()
     const raw = [{
       to: 'HazelGFSwe', text: 'mannen sover inte', brackets: [
@@ -49,10 +54,12 @@ describe('linearization provenance', () => {
         ),
       ],
     }]
-    const [projection] = normalizeLinearizations(raw, document.root, 4)
-    expect(projection.segments.map(segment => segment.text)).toEqual(['man', 'nen', 'sover', '∅', 'inte'])
-    expect(projection.segments).toContainEqual(expect.objectContaining({ role: 'zero', text: '∅', featureValues: ['3SG'] }))
-    expect(projection.segments.find(segment => segment.text === 'sover')?.featureValues).toContain('PRES')
+    const [projection] = normalizeLinearizations(raw, document.root, 4, paradigms)
+    const man = preorder(document.root).find(node => node.kind === 'apply' && node.constructor === 'ManN')!
+    const verb = projection.segments.find(segment => segment.text === 'sover')!
+    expect(projection.segments.map(segment => segment.text)).toEqual(['mannen', 'sover', 'inte'])
+    expect(verb.morphemes?.map(piece => `${piece.text}:${piece.features.join('·')}`)).toEqual(['sov:', 'er:PRES', '∅:3SG'])
+    expect(verb.morphemes?.[2].realizedBy).toContain(man.id)
   })
 
   it('uses GF surface order and assigns English agreement to the negative auxiliary', () => {

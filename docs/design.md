@@ -51,3 +51,34 @@ the union of its descendants' surface fibers in all three concrete syntaxes.
 Feature labels are a second, morphological layer. They explain why a surface
 token can realize several coordinates without conflating those coordinates
 with the syntactic category palette.
+
+## Two surfaces: operad and algebra
+
+The abstract and concrete sides are deliberately different materials, so they
+can never be mistaken for each other (the doctrine from the June 2026
+coloring-demo prompts: "the colors of the operad and then the colors in the
+algebra … half the color spectrum for POS and the other half for morphology"):
+
+| | Operad (abstract syntax) | Algebra (each concrete syntax) |
+|---|---|---|
+| Material | dark blueprint, monospace operation cards | paper, serif words |
+| Hue means | the sort (GF category) | the feature axis (tense, aspect, agreement, polarity, definiteness) |
+| Hue range | cool half, 120°–276° (`CATEGORY_COLORS`) | warm half, 328°–56° (`FEATURE_COLORS`) |
+| Shows | operations, profiles `(A₁,…,Aₙ) → B`, typed ports | words → morphemes: stem, *changed stem* (wavy), affix, ∅ |
+
+The operad reaches the paper only as hairline **phrase boxes** under each
+sentence (the little-discs picture from coloring-demo Trial 6): one box per
+node over the words it yields, dashed and numbered when the yield is
+discontinuous (*hat … geschlafen*). Focus is an overlay (white on the
+blueprint, black on paper) and never recolors anything.
+`src/lib/style.test.ts` checks the two hue ranges stay disjoint.
+
+Morphemes come from GF's own paradigm tables (`public/static/paradigms.json`,
+from `l -table`), not hand-written splits. Each morpheme records the nodes
+that control it, so hovering *-s* in *he sleeps* lights `HePron` and the
+`Temp` leaf. Clicking a tense/aspect morpheme pins that feature, which
+restricts the `Temp` palette and fades the tense variations it rules out.
+`src/lib/__golden__/morphology.txt` is the reviewed segmentation of the whole
+verb lexicon; `morphology.test.ts` also checks, for all 16416 sentences, that
+morphemes concatenate back to the word and that inflected words occur in
+GF's paradigm for their leaf.

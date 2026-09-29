@@ -24,8 +24,7 @@
     class:focused={node.id === focus}
     class:linked={linked.includes(node.id)}
     class:hole={node.kind === 'hole'}
-    style:--node-ink={color.ink}
-    style:--node-wash={color.wash}
+    style:--glow={color.glow}
     onclick={() => onFocus(node.id)}
     onmouseenter={() => onHover([node.id])}
     onmouseleave={() => onHover([])}
@@ -46,7 +45,7 @@
     <div class="children">
       {#each node.children as child, index (child.id)}
         <div class="child">
-          <span class="port" style:--port={CATEGORY_COLORS[declaration?.inputs[index] ?? category].ink}>
+          <span class="port" style:--port={CATEGORY_COLORS[declaration?.inputs[index] ?? category].glow}>
             {declaration?.inputs[index]}
           </span>
           <TreeNode node={child} {focus} {linked} {onFocus} {onHover} />
@@ -57,35 +56,38 @@
 </div>
 
 <style>
+  /* Operad channel: a dark blueprint of typed operations. Hue = sort (cool half
+     of the wheel); no words and no feature values ever appear here. */
   .branch { display: flex; flex-direction: column; align-items: center; min-width: max-content; }
   .node {
-    position: relative; display: grid; grid-template-columns: auto 1fr; gap: .12rem .48rem;
-    min-width: 9.5rem; max-width: 14rem; padding: .58rem .68rem; text-align: left;
-    color: #25231f; background: color-mix(in srgb, var(--node-wash) 72%, #fff);
-    border: 1px solid color-mix(in srgb, var(--node-ink) 42%, #b8b0a1);
-    border-radius: .72rem; cursor: pointer; box-shadow: 0 2px 9px rgb(48 42 31 / 7%);
-    transition: transform 100ms ease, box-shadow 100ms ease, outline-color 100ms ease;
+    position: relative; display: grid; grid-template-columns: auto 1fr; gap: .1rem .5rem;
+    min-width: 9rem; max-width: 13rem; padding: .5rem .62rem; text-align: left; cursor: pointer;
+    color: #dfe7f2; background: #131c2a;
+    border: 1px solid color-mix(in srgb, var(--glow) 55%, transparent); border-radius: 4px;
+    box-shadow: 0 0 0 1px #0b111a, 0 0 18px -8px var(--glow);
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   }
-  .node:hover { transform: translateY(-1px); box-shadow: 0 4px 13px rgb(48 42 31 / 12%); }
-  .node.focused { outline: 3px solid #20201e; outline-offset: 3px; }
-  .node.linked:not(.focused) { outline: 3px solid var(--node-ink); outline-offset: 3px; }
-  .node.hole { border-style: dashed; background: #fffdf7; }
+  .node:hover { background: #172234; }
+  .node.focused { outline: 2px solid #f4f7fb; outline-offset: 3px; }
+  .node.linked:not(.focused) { outline: 2px dashed #f4f7fb; outline-offset: 3px; }
+  .node.hole { border-style: dashed; background: transparent; }
   .output {
-    grid-row: 1 / span 2; align-self: center; min-width: 2rem; padding: .22rem .3rem;
-    border-radius: .38rem; color: var(--node-ink); background: var(--node-wash);
-    font: 750 .72rem/1 ui-monospace, monospace; text-align: center;
+    grid-row: 1 / span 2; align-self: center; min-width: 2.1rem; padding: .24rem .3rem;
+    border-radius: 2px; color: #0b111a; background: var(--glow);
+    font: 800 .68rem/1 ui-monospace, monospace; text-align: center;
   }
-  .name { font: 650 .78rem/1.15 system-ui, sans-serif; }
-  code, .profile { color: #696155; font: .62rem/1.1 ui-monospace, monospace; }
-  .profile { grid-column: 2; margin-top: .12rem; }
-  .hole-mark { position: absolute; top: .32rem; right: .48rem; color: var(--node-ink); font-weight: 800; }
-  .children { position: relative; display: flex; gap: 1.15rem; padding-top: 1.65rem; }
-  .children::before { content: ''; position: absolute; top: .72rem; left: 10%; right: 10%; border-top: 1px solid #c9c0b2; }
+  .name { color: #9fb0c6; font: 500 .62rem/1.2 ui-monospace, monospace; }
+  code { color: var(--glow); font: 700 .74rem/1.15 ui-monospace, monospace; grid-row: 1; grid-column: 2; }
+  .name { grid-row: 2; grid-column: 2; }
+  .profile { grid-column: 1 / -1; margin-top: .22rem; padding-top: .22rem; border-top: 1px solid #22314a; color: #7d8ea6; font: .58rem/1.1 ui-monospace, monospace; }
+  .hole-mark { position: absolute; top: .3rem; right: .45rem; color: var(--glow); font-weight: 800; }
+  .children { position: relative; display: flex; gap: 1.1rem; padding-top: 1.65rem; }
+  .children::before { content: ''; position: absolute; top: .72rem; left: 10%; right: 10%; border-top: 1px solid #33455f; }
   .child { position: relative; display: flex; flex-direction: column; align-items: center; }
-  .child::before { content: ''; height: .75rem; border-left: 1px solid #c9c0b2; position: absolute; top: -1.65rem; }
+  .child::before { content: ''; height: .75rem; border-left: 1px solid #33455f; position: absolute; top: -1.65rem; }
   .port {
-    margin: -1.45rem 0 .48rem; z-index: 1; padding: .12rem .28rem; border-radius: .25rem;
-    color: var(--port); background: #fbf8f0; border: 1px solid color-mix(in srgb, var(--port) 35%, #ddd);
-    font: 700 .58rem/1 ui-monospace, monospace;
+    margin: -1.45rem 0 .48rem; z-index: 1; padding: .1rem .3rem; border-radius: 999px;
+    color: var(--port); background: #0e1520; border: 1px solid color-mix(in srgb, var(--port) 60%, transparent);
+    font: 700 .56rem/1 ui-monospace, monospace;
   }
 </style>

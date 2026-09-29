@@ -22,6 +22,32 @@ const trees = [...new Set(generated.split('\n').map(line => line.trim())
   .filter(line => line.startsWith('MkS ') && !line.includes('Hole')))].sort()
 if (!trees.length) throw new Error('gf generated no trees')
 
+// Paradigm tables for every lexical leaf: GF's own form ↔ parameter-cell
+// pairs (`l -table`). The editor segments words into stem + exponents
+// against these, instead of hand-written splits.
+const LEXICAL_CATEGORIES = new Set(['N', 'V', 'V2', 'Pron', 'Det'])
+function paradigms() {
+  const abstract = execFileSync('gf', ['--run', pgf], { input: 'pg -funs\nq\n', encoding: 'utf8' })
+  // Nullary functions of a lexical category, e.g. `SleepV : V ;`.
+  const lexical = [...abstract.matchAll(/^(\w+) : (\w+) ;$/gm)]
+    .filter(([, name, category]) => LEXICAL_CATEGORIES.has(category) && !name.startsWith('Hole'))
+    .map(([, name]) => name)
+  const result = {}
+  for (const language of languages) {
+    const script = lexical.flatMap(name => [`ps "@@ ${name}"`, `l -table -lang=${language} ${name}`]).join('\n') + '\nq\n'
+    const output = execFileSync('gf', ['--run', pgf], { input: script, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+    const tables = (result[language] = {})
+    let current
+    for (const line of output.split('\n')) {
+      const marker = line.match(/^@@ (\w+)$/)
+      if (marker) { current = tables[marker[1]] = {}; continue }
+      const cell = line.match(/^s (.*?) : (.*)$/)
+      if (current && cell && cell[2]) current[cell[1]] = cell[2]
+    }
+  }
+  return result
+}
+
 const gf = spawn('gf', [`--server=${port}`, `--document-root=${resolve(appDir, 'public')}`], { stdio: 'ignore' })
 const base = `http://127.0.0.1:${port}/HazelGF.pgf`
 
@@ -53,6 +79,7 @@ try {
   for (const [tense, table] of Object.entries(shards)) {
     writeFileSync(resolve(outDir, `linearizations-${tense}.json`), JSON.stringify(table))
   }
+  writeFileSync(resolve(outDir, 'paradigms.json'), JSON.stringify(paradigms()))
   writeFileSync(resolve(outDir, 'index.json'), JSON.stringify({ shards: Object.keys(shards).sort(), trees: trees.length }))
   console.log(`precomputed ${trees.length} trees × ${languages.size} languages in ${Object.keys(shards).length} tense shards → public/static/`)
 } finally {

@@ -36,7 +36,21 @@ button:disabled { opacity: .38; cursor: not-allowed; }
 .workspace-bar { padding: 1rem 1.25rem; border-bottom: 1px solid #ddd5c8; background: rgb(255 253 248 / 58%); }
 .workspace-bar code { display: block; max-width: 62vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #5d554b; font-size: .66rem; }
 .document-actions input { display: none; }
-.tree-scroll { min-height: 23rem; display: flex; align-items: start; justify-content: center; overflow: auto; padding: 2.2rem 1.5rem 2.7rem; background-image: linear-gradient(#ded7cc 1px, transparent 1px), linear-gradient(90deg, #ded7cc 1px, transparent 1px); background-size: 28px 28px; background-color: rgb(255 253 248 / 76%); }
+.tree-scroll {
+  position: relative; min-height: 23rem; display: flex; align-items: start; justify-content: center; overflow: auto; padding: 2.8rem 1.5rem 2.7rem;
+  background-color: #0e1520;
+  background-image: linear-gradient(#18243499 1px, transparent 1px), linear-gradient(90deg, #18243499 1px, transparent 1px),
+    linear-gradient(#1f2e4466 1px, transparent 1px), linear-gradient(90deg, #1f2e4466 1px, transparent 1px);
+  background-size: 14px 14px, 14px 14px, 70px 70px, 70px 70px;
+}
+.surface-label { position: absolute; top: .8rem; left: 1rem; font: 700 .58rem/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+.operad-label { color: #6f86a6; }
+.projections { background: #fbf8f1; box-shadow: inset 0 1px 0 #fff; }
+.pins { display: flex; align-items: center; gap: .35rem; margin: .2rem 0 .4rem; }
+.pins .kicker { margin: 0 .2rem 0 0; }
+.pins button { padding: .22rem .45rem; border: 1px solid #1d1b18; border-radius: 999px; background: #fffdf8; font: 700 .62rem ui-monospace, monospace; cursor: pointer; }
+.pins .clear { border-color: #cfc6b8; color: #7c7367; }
+.pin-note { margin: -.35rem 0 .6rem; color: #a0522d; font: .62rem ui-monospace, monospace; }
 .projections { padding: 1.4rem 1.55rem 1.7rem; border-top: 1px solid #d9d1c4; }
 .projection-heading { align-items: end; padding-bottom: .65rem; }.projection-heading h2 { margin: .1rem 0 0; font: 600 1.5rem Georgia, serif; }.projection-heading p { max-width: 31rem; margin: 0; color: #776f64; font-size: .7rem; line-height: 1.4; text-align: right; }
 .error { padding: .6rem .7rem; color: #943e27; background: #f9e7e0; border-radius: .45rem; font-size: .72rem; }

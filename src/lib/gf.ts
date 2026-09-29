@@ -1,5 +1,6 @@
 import type { LanguageId, LinearizationProjection, Node } from './model'
 import { normalizeLinearizations, type RawLinearization } from './projection'
+import type { Paradigms } from './morphology'
 
 export interface GfRuntime {
   readonly label: string
@@ -9,10 +10,22 @@ export interface GfRuntime {
 
 const SUPPORTED = new Set<LanguageId>(['HazelGFEng', 'HazelGFGer', 'HazelGFSwe'])
 
-function project(raw: RawLinearization[], root: Node, revision: number): LinearizationProjection[] {
+let paradigms: Promise<Paradigms> | undefined
+
+/** GF paradigm tables (scripts/precompute.mjs), used to split words into morphemes. */
+function loadParadigms(): Promise<Paradigms> {
+  paradigms ??= fetch(`${import.meta.env.BASE_URL}static/paradigms.json`).then(response => {
+    if (!response.ok) throw new Error(`paradigms.json request failed (${response.status})`)
+    return response.json() as Promise<Paradigms>
+  })
+  paradigms.catch(() => { paradigms = undefined })
+  return paradigms
+}
+
+async function project(raw: RawLinearization[], root: Node, revision: number): Promise<LinearizationProjection[]> {
   const filtered = raw.filter(item => SUPPORTED.has(item.to as LanguageId))
   if (filtered.length !== 3) throw new Error('GF did not return all three concrete syntaxes')
-  return normalizeLinearizations(filtered, root, revision)
+  return normalizeLinearizations(filtered, root, revision, await loadParadigms())
 }
 
 export class HttpGfRuntime implements GfRuntime {

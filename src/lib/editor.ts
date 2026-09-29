@@ -134,6 +134,19 @@ export function toGfTerm(node: Node): string {
   return [node.constructor, ...args].join(' ')
 }
 
+/** Parse a complete GF term back into an editor tree (the inverse of toGfTerm). */
+export function fromGfTerm(term: string): Node {
+  const tokens = term.match(/[()]|[^\s()]+/g) ?? []
+  let index = 0
+  const node = (): Node => {
+    if (tokens[index] === '(') { index++; const inner = node(); index++; return inner }
+    const constructor = constructorById.get(tokens[index++])
+    if (!constructor) throw new Error(`Unknown constructor in ${term}`)
+    return { kind: 'apply', id: freshId(), constructor: constructor.id, output: constructor.output, children: constructor.inputs.map(() => node()) }
+  }
+  return node()
+}
+
 export function validateDocument(value: unknown): value is EditorDocument {
   if (!value || typeof value !== 'object') return false
   const doc = value as Partial<EditorDocument>

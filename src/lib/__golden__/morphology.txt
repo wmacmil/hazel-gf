@@ -1,0 +1,36 @@
+SleepV HePron Present        he sleep·s[PRES·3SG]  |  er ~schläf·t[PRES·3SG]  |  han sov·er[PRES]·∅[3SG]
+SleepV HePron Past           he ~slept[PAST]  |  er ~schlief[PAST]·∅[3SG]  |  han sov·∅[PAST]·∅[3SG]
+SleepV HePron PresentPerfect he has[PRES·PERF·3SG] ~slept[PTCP]  |  er hat[PRES·PERF·3SG] ge[PTCP]·schlaf·en[PTCP]  |  han har[PRES·PERF]·∅[3SG] sov·it[PTCP]
+SleepV IPron  Present        I sleep·∅[PRES]  |  ich schlaf·e[PRES]  |  jag sov·er[PRES]
+SleepV IPron  Past           I ~slept[PAST]  |  ich ~schlief[PAST]  |  jag sov·∅[PAST]
+SleepV IPron  PresentPerfect I have[PRES·PERF] ~slept[PTCP]  |  ich habe[PRES·PERF] ge[PTCP]·schlaf·en[PTCP]  |  jag har[PRES·PERF] sov·it[PTCP]
+WalkV  HePron Present        he walk·s[PRES·3SG]  |  er geh·t[PRES·3SG]  |  han gå·r[PRES]·∅[3SG]
+WalkV  HePron Past           he walk·ed[PAST]  |  er ~ging[PAST]·∅[3SG]  |  han ~gick[PAST]·∅[3SG]
+WalkV  HePron PresentPerfect he has[PRES·PERF·3SG] walk·ed[PTCP]  |  er ist[PRES·PERF·3SG] ge[PTCP]·~gang·en[PTCP]  |  han har[PRES·PERF]·∅[3SG] gå·tt[PTCP]
+WalkV  IPron  Present        I walk·∅[PRES]  |  ich geh·e[PRES]  |  jag gå·r[PRES]
+WalkV  IPron  Past           I walk·ed[PAST]  |  ich ~ging[PAST]  |  jag ~gick[PAST]
+WalkV  IPron  PresentPerfect I have[PRES·PERF] walk·ed[PTCP]  |  ich bin[PRES·PERF] ge[PTCP]·~gang·en[PTCP]  |  jag har[PRES·PERF] gå·tt[PTCP]
+RunV   HePron Present        he run·s[PRES·3SG]  |  er ~läuf·t[PRES·3SG]  |  han spring·er[PRES]·∅[3SG]
+RunV   HePron Past           he ~ran[PAST]  |  er ~lief[PAST]·∅[3SG]  |  han ~sprang[PAST]·∅[3SG]
+RunV   HePron PresentPerfect he has[PRES·PERF·3SG] run·∅[PTCP]  |  er ist[PRES·PERF·3SG] ge[PTCP]·lauf·en[PTCP]  |  han har[PRES·PERF]·∅[3SG] ~sprungit[PTCP]
+RunV   IPron  Present        I run·∅[PRES]  |  ich lauf·e[PRES]  |  jag spring·er[PRES]
+RunV   IPron  Past           I ~ran[PAST]  |  ich ~lief[PAST]  |  jag ~sprang[PAST]
+RunV   IPron  PresentPerfect I have[PRES·PERF] run·∅[PTCP]  |  ich bin[PRES·PERF] ge[PTCP]·lauf·en[PTCP]  |  jag har[PRES·PERF] ~sprungit[PTCP]
+SeeV2  HePron Present        he see·s[PRES·3SG] her  |  er ~sieh·t[PRES·3SG] sie  |  han se·r[PRES]·∅[3SG] henne
+SeeV2  HePron Past           he ~saw[PAST] her  |  er ~sah[PAST]·∅[3SG] sie  |  han ~såg[PAST]·∅[3SG] henne
+SeeV2  HePron PresentPerfect he has[PRES·PERF·3SG] see·n[PTCP] her  |  er hat[PRES·PERF·3SG] sie ge[PTCP]·seh·en[PTCP]  |  han har[PRES·PERF]·∅[3SG] se·tt[PTCP] henne
+SeeV2  IPron  Present        I see·∅[PRES] her  |  ich seh·e[PRES] sie  |  jag se·r[PRES] henne
+SeeV2  IPron  Past           I ~saw[PAST] her  |  ich ~sah[PAST] sie  |  jag ~såg[PAST] henne
+SeeV2  IPron  PresentPerfect I have[PRES·PERF] see·n[PTCP] her  |  ich habe[PRES·PERF] sie ge[PTCP]·seh·en[PTCP]  |  jag har[PRES·PERF] se·tt[PTCP] henne
+LoveV2 HePron Present        he love·s[PRES·3SG] her  |  er lieb·t[PRES·3SG] sie  |  han älsk·ar[PRES]·∅[3SG] henne
+LoveV2 HePron Past           he love·d[PAST] her  |  er lieb·te[PAST]·∅[3SG] sie  |  han älsk·ade[PAST]·∅[3SG] henne
+LoveV2 HePron PresentPerfect he has[PRES·PERF·3SG] love·d[PTCP] her  |  er hat[PRES·PERF·3SG] sie ge[PTCP]·lieb·t[PTCP]  |  han har[PRES·PERF]·∅[3SG] älsk·at[PTCP] henne
+LoveV2 IPron  Present        I love·∅[PRES] her  |  ich lieb·e[PRES] sie  |  jag älsk·ar[PRES] henne
+LoveV2 IPron  Past           I love·d[PAST] her  |  ich lieb·te[PAST] sie  |  jag älsk·ade[PAST] henne
+LoveV2 IPron  PresentPerfect I have[PRES·PERF] love·d[PTCP] her  |  ich habe[PRES·PERF] sie ge[PTCP]·lieb·t[PTCP]  |  jag har[PRES·PERF] älsk·at[PTCP] henne
+ReadV2 HePron Present        he read·s[PRES·3SG] the[DEF] book  |  er ~lies·t[PRES·3SG] das[DEF] Buch  |  han läs·er[PRES]·∅[3SG] bok·en[DEF]
+ReadV2 HePron Past           he read·∅[PAST] the[DEF] book  |  er ~las[PAST]·∅[3SG] das[DEF] Buch  |  han läs·te[PAST]·∅[3SG] bok·en[DEF]
+ReadV2 HePron PresentPerfect he has[PRES·PERF·3SG] read·∅[PTCP] the[DEF] book  |  er hat[PRES·PERF·3SG] das[DEF] Buch ge[PTCP]·les·en[PTCP]  |  han har[PRES·PERF]·∅[3SG] läs·t[PTCP] bok·en[DEF]
+ReadV2 IPron  Present        I read·∅[PRES] the[DEF] book  |  ich les·e[PRES] das[DEF] Buch  |  jag läs·er[PRES] bok·en[DEF]
+ReadV2 IPron  Past           I read·∅[PAST] the[DEF] book  |  ich ~las[PAST] das[DEF] Buch  |  jag läs·te[PAST] bok·en[DEF]
+ReadV2 IPron  PresentPerfect I have[PRES·PERF] read·∅[PTCP] the[DEF] book  |  ich habe[PRES·PERF] das[DEF] Buch ge[PTCP]·les·en[PTCP]  |  jag har[PRES·PERF] läs·t[PTCP] bok·en[DEF]

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import TreeNode from './components/TreeNode.svelte'
-  import ProjectionRow from './components/ProjectionRow.svelte'
+  import AlgebraRow from './components/AlgebraRow.svelte'
   import TenseVariations from './components/TenseVariations.svelte'
   import { createRuntime } from './lib/gf'
   import { producers, profile, wrappers } from './lib/grammar'
@@ -11,6 +11,7 @@
   } from './lib/editor'
   import { agreementExample, exampleDocument } from './lib/examples'
   import { partialProjections } from './lib/projection'
+  import { allowedTenses, togglePins } from './lib/constraints'
   import { CATEGORY_COLORS, type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
 
   const STORAGE_KEY = 'hazel-gf-document-v2'
@@ -21,12 +22,18 @@
   let revision = $state(0)
   let projections = $state<LinearizationProjection[]>([])
   let linked = $state<NodeId[]>([])
+  /** Tense/aspect features pinned by clicking morphemes; they constrain the Temp leaf. */
+  let pinned = $state<string[]>([])
   let runtimeState = $state<'connecting' | 'online' | 'offline'>('connecting')
   let error = $state('')
   let importInput: HTMLInputElement
 
   const focused = $derived(findNode(document.root, document.focus) ?? document.root)
-  const choices = $derived(focused.kind === 'hole' ? producers(focused.expected) : [])
+  const allChoices = $derived(focused.kind === 'hole' ? producers(focused.expected) : [])
+  const choices = $derived(focused.kind === 'hole' && focused.expected === 'Temp'
+    ? allowedTenses(pinned).filter(tense => allChoices.some(choice => choice.id === tense.id))
+    : allChoices)
+  const pin = (features: string[]) => { pinned = togglePins(pinned, features) }
   const wrapChoices = $derived(focused.kind === 'apply'
     ? wrappers(outputOf(focused)).filter(item => item.constructor.output === outputOf(focused))
     : [])
@@ -170,12 +177,15 @@
 <main>
   <aside class="palette-panel">
     <div class="panel-heading">
-      <div><span class="kicker">focused color</span><strong style:color={CATEGORY_COLORS[outputOf(focused)].ink}>{outputOf(focused)}</strong></div>
+      <div><span class="kicker">focused sort</span><strong style:color={CATEGORY_COLORS[outputOf(focused)].ink}>{outputOf(focused)}</strong></div>
       <div class="history"><button disabled={!history.length} onclick={undo}>undo</button><button disabled={!future.length} onclick={redo}>redo</button></div>
     </div>
 
     {#if focused.kind === 'hole'}
       <p class="instruction">Choose an operation whose output is <b>{focused.expected}</b>.</p>
+      {#if choices.length < allChoices.length}
+        <p class="pin-note">{allChoices.length - choices.length} hidden by pinned {pinned.join(' · ')}</p>
+      {/if}
       <div class="choices">
         {#each choices as choice}
           <button class="choice" onclick={() => commit(fillFocused(document, choice.id))}>
@@ -218,22 +228,31 @@
     </div>
 
     <div class="tree-scroll">
+      <span class="surface-label operad-label">operad · abstract syntax · hue = sort</span>
       <TreeNode node={document.root} focus={document.focus} {linked} onFocus={focus} onHover={ids => linked = ids} />
     </div>
 
     <div class="projections">
       <div class="projection-heading">
-        <div><span class="kicker">concrete algebras</span><h2>Linearized fibers</h2></div>
-        <p>Hue = category. Black outline = exact occurrence. Feature labels expose fusion; <b>∅</b> is an empty exponent.</p>
+        <div><span class="kicker">algebras · concrete syntax</span><h2>Linearized fibers</h2></div>
+        <p>Words split into morphemes; <b>warm</b> hue = feature axis, <b>∅</b> = empty exponent, wavy = changed stem.
+          Hairline boxes below are the operad's image on the page. Click a morpheme to pin its tense.</p>
       </div>
+      {#if pinned.length}
+        <div class="pins">
+          <span class="kicker">pinned</span>
+          {#each pinned as feature}<button onclick={() => pin([feature])}>{feature} ×</button>{/each}
+          <button class="clear" onclick={() => pinned = []}>clear</button>
+        </div>
+      {/if}
       {#each projections as projection (projection.language)}
-        <ProjectionRow {projection} focus={document.focus} {linked} onFocus={focus} onHover={ids => linked = ids} />
+        <AlgebraRow {projection} root={document.root} focus={document.focus} {linked} {pinned} onFocus={focus} onHover={ids => linked = ids} onPin={pin} />
       {/each}
       {#if error}<p class="error">{error}</p>{/if}
     </div>
 
     {#if complete && document.root.kind === 'apply'}
-      <TenseVariations root={document.root} {runtime} {linked} onPick={pickTense} onHover={ids => linked = ids} />
+      <TenseVariations root={document.root} {runtime} {linked} {pinned} onPick={pickTense} onHover={ids => linked = ids} onPin={pin} />
     {/if}
   </section>
 </main>
