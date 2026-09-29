@@ -15,7 +15,7 @@ const SUPPORTED = new Set<LanguageId>(LANGUAGE_IDS)
 let paradigms: Promise<Paradigms> | undefined
 
 /** GF paradigm tables (scripts/oracle.mjs), used to split words into morphemes. */
-function loadParadigms(): Promise<Paradigms> {
+export function loadParadigms(): Promise<Paradigms> {
   paradigms ??= fetch(`${import.meta.env.BASE_URL}static/paradigms.json`).then(response => {
     if (!response.ok) throw new Error(`paradigms.json request failed (${response.status})`)
     return response.json() as Promise<Paradigms>

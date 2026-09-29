@@ -56,6 +56,14 @@ export function replaceNode(root: Node, id: NodeId, replacement: Node): Node {
   return { ...root, children: root.children.map(child => replaceNode(child, id, replacement)) }
 }
 
+/** The next hole after `fromId` in reading (preorder) order, wrapping around; `fromId` itself if none is left. */
+export function nextHole(root: Node, fromId: NodeId): NodeId {
+  const nodes = preorder(root)
+  const start = nodes.findIndex(node => node.id === fromId)
+  const ordered = [...nodes.slice(start + 1), ...nodes.slice(0, start + 1)]
+  return ordered.find(node => node.kind === 'hole')?.id ?? fromId
+}
+
 export function fillFocused(document: EditorDocument, constructorId: ConstructorId): EditorDocument {
   const focus = findNode(document.root, document.focus)
   const constructor = constructorById.get(constructorId)
@@ -65,8 +73,9 @@ export function fillFocused(document: EditorDocument, constructorId: Constructor
     kind: 'apply', id: focus.id, constructor: constructor.id, output: constructor.output,
     children: constructor.inputs.map(hole),
   }
-  const nextFocus = replacement.children[0]?.id ?? replacement.id
-  return { ...document, root: replaceNode(document.root, focus.id, replacement), focus: nextFocus }
+  const root = replaceNode(document.root, focus.id, replacement)
+  // Into the new operation's first argument, or on to the next hole once a leaf is placed.
+  return { ...document, root, focus: replacement.children[0]?.id ?? nextHole(root, replacement.id) }
 }
 
 /** Replace one leaf by another nullary operation of the same color, keeping the node's identity. */
@@ -98,6 +107,16 @@ export function wrapFocused(document: EditorDocument, constructorId: Constructor
     kind: 'apply', id: freshId(), constructor: constructor.id, output: constructor.output, children,
   }
   return { ...document, root: replaceNode(document.root, focus.id, wrapper), focus: wrapper.id }
+}
+
+/** Fill a hole with a written subtree; focus moves to its first obligation, else to the next hole. */
+export function insertAt(document: EditorDocument, holeId: NodeId, subtree: Node): EditorDocument {
+  const target = findNode(document.root, holeId)
+  if (!target || target.kind !== 'hole') throw new Error('Only a hole can be written into')
+  if (outputOf(subtree) !== target.expected) throw new Error(`Sort ${outputOf(subtree)} does not match hole ${target.expected}`)
+  const obligation = preorder(subtree).find(node => node.kind === 'hole')
+  const root = replaceNode(document.root, holeId, subtree)
+  return { ...document, root, focus: obligation?.id ?? nextHole(root, subtree.id) }
 }
 
 /** Why a subtree cannot be plugged into `parent`'s input `port`, or undefined if it can. */

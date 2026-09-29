@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   clearFocused, fillFocused, findNode, isComplete, newDocument, outputOf, toGfTerm,
-  moveProblem, moveSubtree, swapLeaf, validateDocument, wrapFocused,
+  moveProblem, moveSubtree, nextHole, swapLeaf, validateDocument, wrapFocused,
 } from './editor'
 import type { ApplyNode } from './model'
 import { exampleDocument } from './examples'
@@ -14,6 +14,17 @@ describe('typed structure editing', () => {
     expect(findNode(sentence.root, sentence.focus)?.kind).toBe('hole')
     expect(outputOf(findNode(sentence.root, sentence.focus)!)).toBe('Temp')
     expect(() => fillFocused(blank, 'PredVP')).toThrow(/does not match/)
+  })
+
+  it('moves on to the next hole once a leaf fills one, wrapping around', () => {
+    let document = fillFocused(newDocument(), 'MkS')           // focus: ⟦Temp⟧
+    document = fillFocused(document, 'Past')                    // leaf → next hole ⟦Pol⟧
+    expect(outputOf(findNode(document.root, document.focus)!)).toBe('Pol')
+    document = fillFocused(document, 'Negative')                // → ⟦Cl⟧
+    expect(outputOf(findNode(document.root, document.focus)!)).toBe('Cl')
+    const complete = exampleDocument()
+    const leaf = (complete.root as ApplyNode).children[0]
+    expect(nextHole(complete.root, leaf.id)).toBe(leaf.id)       // nothing left: stay put
   })
 
   it('clears without losing the required category', () => {

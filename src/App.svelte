@@ -4,15 +4,18 @@
   import AlgebraRow from './components/AlgebraRow.svelte'
   import TenseVariations from './components/TenseVariations.svelte'
   import OperadFlow from './components/OperadFlow.svelte'
-  import { createRuntime } from './lib/gf'
+  import { createRuntime, loadParadigms } from './lib/gf'
+  import WriteBox from './components/WriteBox.svelte'
+  import type { Paradigms } from './lib/morphology'
+  import type { Candidate } from './lib/writing'
   import { producers, profile, wrappers } from './lib/grammar'
   import {
     clearFocused, fillFocused, findNode, isComplete, moveFocus, newDocument, outputOf,
-    moveSubtree, swapLeaf, toGfTerm, validateDocument, wrapFocused,
+    insertAt, moveSubtree, swapLeaf, toGfTerm, validateDocument, wrapFocused,
   } from './lib/editor'
   import { agreementExample, exampleDocument, modifierExample, prepositionExample } from './lib/examples'
   import { partialProjections } from './lib/projection'
-  import { allowedTenses, togglePins } from './lib/constraints'
+  import { allowedTenses, pinnable, togglePins } from './lib/constraints'
   import { CATEGORY_COLORS, type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
 
   const STORAGE_KEY = 'hazel-gf-document-v2'
@@ -29,6 +32,17 @@
     const url = new URL(location.href)
     url.searchParams.set('operad', view)
     window.history.replaceState(null, '', url)
+  }
+
+  let paradigms = $state<Paradigms>()
+
+  /** Write a candidate into the focused hole; an inflected form also pins what it commits to. */
+  function write(candidate: Candidate) {
+    if (focused.kind !== 'hole') return
+    try {
+      commit(insertAt(document, focused.id, candidate.subtree))
+      if (candidate.pins.length) pinned = [...new Set([...pinned, ...pinnable(candidate.pins)])]
+    } catch (cause) { error = cause instanceof Error ? cause.message : 'Write failed' }
   }
 
   function move(subtree: NodeId, parent: NodeId, port: number) {
@@ -119,6 +133,8 @@
   function focus(id: NodeId) { document = { ...document, focus: id } }
 
   function keydown(event: KeyboardEvent) {
+    const typing = event.target as HTMLElement | null
+    if (typing && ['INPUT', 'TEXTAREA', 'SELECT'].includes(typing.tagName)) return
     const modifier = event.metaKey || event.ctrlKey
     if (modifier && event.key.toLowerCase() === 'z') {
       event.preventDefault()
@@ -181,6 +197,7 @@
       } catch { /* retain a fresh document */ }
     }
     void runtime.loadGrammar().then(() => { runtimeState = 'online' }).catch(() => { runtimeState = 'offline' })
+    void loadParadigms().then(loaded => { paradigms = loaded }).catch(() => {})
     void refresh()
   })
 </script>
@@ -206,7 +223,8 @@
     </div>
 
     {#if focused.kind === 'hole'}
-      <p class="instruction">Choose an operation whose output is <b>{focused.expected}</b>.</p>
+      <WriteBox expected={focused.expected} {paradigms} onWrite={write} />
+      <p class="instruction">…or choose an operation whose output is <b>{focused.expected}</b>.</p>
       {#if choices.length < allChoices.length}
         <p class="pin-note">{allChoices.length - choices.length} hidden by pinned {pinned.join(' · ')}</p>
       {/if}

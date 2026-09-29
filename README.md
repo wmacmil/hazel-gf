@@ -60,6 +60,16 @@ of the same sort behind. `isValidConnection` asks the kernel
 wire, e.g. *Sort VP does not match port NP*. The canvas is a projection of the
 document, rebuilt from the tree on each change, never edited in place.
 
+## Writing
+
+Focus any hole and type a word in English, German, or Swedish. Candidates are
+the typed ways that word can fill the hole, with the remaining arguments as
+holes to fill next (*Frau* in an NP hole → `DetCN ⟦Det⟧ (UseN WomanN)`). An
+inflected form also pins what it commits to (*schlief* pins `PAST`). After a
+leaf is placed, focus moves to the next hole. See
+[docs/writing-and-decks.md](docs/writing-and-decks.md) for sentence entry,
+decks, and practice (designed, not built yet).
+
 ## Prepositional phrases
 
 `PrepNP : (Prep, NP) → Adv`, `AdvVP : (VP, Adv) → VP`, `AdvCN : (CN, Adv) → CN`,
