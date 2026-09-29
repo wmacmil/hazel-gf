@@ -656,6 +656,17 @@ class GFConcrete {
     return tokens
   }
 
+  // hazel-gf addition: parse pre-split tokens and report how many were consumed
+  // before the parse failed, so the editor can mark the error position.
+  public parseTokens(tokens: string[], cat: string): { trees: Fun[]; consumed: number } {
+    let ps = new ParseState(this, cat)
+    for (let i = 0; i < tokens.length; i++) {
+      if (!ps.next(tokens[i]))
+        return { trees: [], consumed: i }
+    }
+    return { trees: ps.extractTrees(), consumed: tokens.length }
+  }
+
   public parseString(string: string, cat: string): Fun[] {
     let tokens = this.tokenize(string)
 

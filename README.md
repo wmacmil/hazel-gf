@@ -46,19 +46,34 @@ Worked trees can also be opened directly:
 If the RGL is somewhere other than `~/code/gf/gf-rgl/dist/alltenses`, set
 `GF_RGL_DIST` before building.
 
-## Operad views
+## Views
 
-The abstract tree can be drawn as the recursive **tree**, as a SvelteFlow
-**flow** wiring diagram, or **both** side by side (the default). Choose with
-the toggle above the tree, or with `?operad=tree|flow|both`; the choice is
-remembered. Both views render the same `OperadCard` and share focus and hover.
+Four settings, each in the URL and remembered:
 
-In the flow view every input port is a typed handle. Dragging a node's top
-(output) handle onto a hole's port moves that subtree there and leaves a hole
-of the same sort behind. `isValidConnection` asks the kernel
-(`editor.ts: moveProblem`), and the canvas shows the reason for a refused
-wire, e.g. *Sort VP does not match port NP*. The canvas is a projection of the
-document, rebuilt from the tree on each change, never edited in place.
+- `mode=view|edit`: view is full width; edit adds the palette column (fill,
+  clear, wrap, write a word into a hole).
+- `operad=flow|tree`: the operad as a SvelteFlow wiring diagram (default) or a
+  recursive tree. In the flow view every input port is a typed handle;
+  dragging a node's output onto a hole's port moves that subtree there, and
+  `isValidConnection` asks the kernel (`editor.ts: moveProblem`), showing the
+  reason for a refused wire.
+- `layout=right|left|above|below`: where the graph sits relative to the
+  sentences; details (tense variations) stay across the bottom.
+- `lines=auto|columns|rows`: languages side by side or one per row. `auto`
+  measures the pane and uses columns only when all sentences fit together;
+  every sentence then scales (0.55×–2×) to fill its space without clipping.
+
+## Parsing (text → tree)
+
+Type a sentence in any language above the sentences. GF parses it in the
+browser (a Web Worker, since a German parse costs ~350 ms of GF prediction);
+nothing is pregenerated. One reading loads with Enter; several are listed
+with what only each reading uses (*I see the woman with the dog*: `AdvVP` —
+the PP modifies the seeing — or `AdvCN` — it modifies the woman). A failed
+parse is marked, not rejected: how far it got, words outside the lexicon, and
+the words GF would accept next (click one to continue). Capitalization the
+grammar requires is repaired (*der mann* → *der Mann*). `parsing.test.ts`
+round-trips sampled sentences in every language back to their own trees.
 
 ## Writing
 

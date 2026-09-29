@@ -4,6 +4,7 @@
   import AlgebraRow from './components/AlgebraRow.svelte'
   import TenseVariations from './components/TenseVariations.svelte'
   import OperadFlow from './components/OperadFlow.svelte'
+  import SentenceBox from './components/SentenceBox.svelte'
   import { createRuntime, loadParadigms } from './lib/gf'
   import WriteBox from './components/WriteBox.svelte'
   import type { Paradigms } from './lib/morphology'
@@ -11,27 +12,52 @@
   import { producers, profile, wrappers } from './lib/grammar'
   import {
     clearFocused, fillFocused, findNode, isComplete, moveFocus, newDocument, outputOf,
-    insertAt, moveSubtree, swapLeaf, toGfTerm, validateDocument, wrapFocused,
+    fromGfTerm, insertAt, moveSubtree, swapLeaf, toGfTerm, validateDocument, wrapFocused,
   } from './lib/editor'
   import { agreementExample, exampleDocument, modifierExample, prepositionExample } from './lib/examples'
   import { partialProjections } from './lib/projection'
   import { allowedTenses, pinnable, togglePins } from './lib/constraints'
+  import { columnFit } from './lib/layout'
   import { CATEGORY_COLORS, type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
 
   const STORAGE_KEY = 'hazel-gf-document-v2'
 
-  /** How the operad is drawn: the recursive tree, the SvelteFlow wiring diagram, or both side by side. */
-  type OperadView = 'tree' | 'flow' | 'both'
-  const OPERAD_VIEWS: OperadView[] = ['tree', 'flow', 'both']
-  const VIEW_KEY = 'hazel-gf-operad-view'
-  let operadView = $state<OperadView>('both')
+  /**
+   * View settings, each in the URL (?operad=…) and remembered locally:
+   * mode — view (full width, parse to explore) or edit (the palette column appears);
+   * operad — the operad as a SvelteFlow wiring diagram or a recursive tree;
+   * layout — where the graph sits relative to the sentences; details stay below;
+   * lines — languages as columns (l1 | l2 | l3) or rows; auto picks columns
+   *         while every sentence is short.
+   */
+  const OPTIONS = {
+    mode: ['view', 'edit'],
+    operad: ['flow', 'tree'],
+    layout: ['right', 'left', 'above', 'below'],
+    lines: ['auto', 'columns', 'rows'],
+  } as const
+  type Setting = keyof typeof OPTIONS
+  let settings = $state<{ [key in Setting]: (typeof OPTIONS)[key][number] }>({ mode: 'view', operad: 'flow', layout: 'right', lines: 'auto' })
 
-  function setOperadView(view: OperadView) {
-    operadView = view
-    localStorage.setItem(VIEW_KEY, view)
+  function setSetting<K extends Setting>(key: K, value: (typeof OPTIONS)[K][number]) {
+    settings = { ...settings, [key]: value }
+    localStorage.setItem(`hazel-gf-${key}`, value)
     const url = new URL(location.href)
-    url.searchParams.set('operad', view)
+    url.searchParams.set(key, value)
     window.history.replaceState(null, '', url)
+  }
+
+  const WORKED: Record<string, () => EditorDocument> = {
+    'I see the woman': exampleDocument,
+    'the man does not sleep': agreementExample,
+    'the man sleeps in the house': prepositionExample,
+    'I see the woman with the dog': modifierExample,
+    'blank sentence': newDocument,
+  }
+
+  function loadParsed(term: string) {
+    const root = fromGfTerm(term)
+    commit({ ...document, root, focus: root.id })
   }
 
   let paradigms = $state<Paradigms>()
@@ -61,6 +87,15 @@
   let runtimeState = $state<'connecting' | 'online' | 'offline'>('connecting')
   let error = $state('')
   let importInput: HTMLInputElement
+
+  /** Width of the sentences pane, measured live; `lines: auto` uses columns only when every sentence fits. */
+  let linesWidth = $state(0)
+  const fit = $derived(columnFit(projections, linesWidth))
+  const lineOrientation = $derived<'row' | 'column'>(
+    settings.lines === 'columns' ? 'column'
+      : settings.lines === 'rows' ? 'row'
+        : fit.fits ? 'column' : 'row')
+
 
   const focused = $derived(findNode(document.root, document.focus) ?? document.root)
   const allChoices = $derived(focused.kind === 'hole' ? producers(focused.expected) : [])
@@ -145,7 +180,7 @@
     const direction = event.key === 'ArrowUp' ? 'parent' : event.key === 'ArrowDown' ? 'firstChild'
       : event.key === 'ArrowLeft' ? 'previous' : event.key === 'ArrowRight' ? 'next' : undefined
     if (direction) { event.preventDefault(); document = moveFocus(document, direction); return }
-    if (event.key === 'Backspace' || event.key === 'Delete') {
+    if (settings.mode === 'edit' && (event.key === 'Backspace' || event.key === 'Delete')) {
       const target = event.target as HTMLElement | null
       if (target && ['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return
       event.preventDefault()
@@ -182,8 +217,11 @@
   }
 
   onMount(() => {
-    const requested = new URLSearchParams(location.search).get('operad') ?? localStorage.getItem(VIEW_KEY)
-    if (OPERAD_VIEWS.includes(requested as OperadView)) operadView = requested as OperadView
+    const query = new URLSearchParams(location.search)
+    for (const key of Object.keys(OPTIONS) as Setting[]) {
+      const requested = query.get(key) ?? localStorage.getItem(`hazel-gf-${key}`)
+      if ((OPTIONS[key] as readonly string[]).includes(requested ?? '')) settings = { ...settings, [key]: requested }
+    }
     const preset = new URLSearchParams(location.search).get('example')
     if (preset === 'see') document = exampleDocument()
     else if (preset === 'agreement') document = agreementExample()
@@ -204,18 +242,9 @@
 
 <svelte:window onkeydown={keydown} />
 
-<header>
-  <div>
-    <p class="eyebrow">Hazelnut edit semantics · GF linearization</p>
-    <h1>One tree, three voices</h1>
-    <p class="lede">Construct a typed clause. Every surface span remains linked to the colored tree that produced it.</p>
-  </div>
-  <div class="status" class:offline={runtimeState === 'offline'}>
-    <span></span>{runtimeState === 'online' ? runtime.label : runtimeState === 'offline' ? 'GF offline · preview only' : 'connecting'}
-  </div>
-</header>
 
-<main>
+<main class:editing={settings.mode === 'edit'}>
+  {#if settings.mode === 'edit'}
   <aside class="palette-panel">
     <div class="panel-heading">
       <div><span class="kicker">focused sort</span><strong style:color={CATEGORY_COLORS[outputOf(focused)].ink}>{outputOf(focused)}</strong></div>
@@ -250,24 +279,33 @@
       {/if}
     {/if}
 
-    <div class="examples">
-      <span class="kicker">worked trees</span>
-      <button onclick={() => commit(exampleDocument())}>I see the woman</button>
-      <button onclick={() => commit(agreementExample())}>the man does not sleep</button>
-      <button onclick={() => commit(prepositionExample())}>the man sleeps in the house</button>
-      <button onclick={() => commit(modifierExample())}>I see the woman with the dog</button>
-      <button onclick={() => commit(newDocument())}>blank sentence</button>
-    </div>
   </aside>
+  {/if}
 
   <section class="workspace">
     <div class="workspace-bar">
       <div><span class="kicker">abstract syntax</span><code>{isComplete(document.root) ? toGfTerm(document.root) : 'incomplete but well-typed'}</code></div>
-      <div class="view-toggle" role="radiogroup" aria-label="Operad view">
-        {#each OPERAD_VIEWS as view}
-          <button role="radio" aria-checked={operadView === view} class:on={operadView === view} onclick={() => setOperadView(view)}>{view}</button>
+      <div class="status" class:offline={runtimeState === 'offline'}>
+        <span></span>{runtimeState === 'online' ? runtime.label : runtimeState === 'offline' ? 'GF offline · preview only' : 'connecting'}
+      </div>
+      <div class="view-settings">
+        {#each Object.entries(OPTIONS) as [key, values]}
+          <div class="view-toggle" role="radiogroup" aria-label={key}>
+            <span>{key}</span>
+            {#each values as value}
+              <button role="radio" aria-checked={settings[key as Setting] === value} class:on={settings[key as Setting] === value}
+                onclick={() => setSetting(key as Setting, value as never)}>{value}</button>
+            {/each}
+          </div>
         {/each}
       </div>
+      <label class="worked">
+        <span>worked trees</span>
+        <select onchange={event => { const pick = WORKED[(event.currentTarget as HTMLSelectElement).value]; if (pick) commit(pick()); (event.currentTarget as HTMLSelectElement).value = '' }}>
+          <option value="">choose…</option>
+          {#each Object.keys(WORKED) as name}<option value={name}>{name}</option>{/each}
+        </select>
+      </label>
       <div class="document-actions">
         <button onclick={downloadDocument}>export JSON</button>
         <button onclick={() => importInput.click()}>import</button>
@@ -276,43 +314,51 @@
       </div>
     </div>
 
-    <div class="operad-views {operadView}">
-      {#if operadView !== 'flow'}
-        <div class="tree-scroll">
-          <span class="surface-label operad-label">operad · tree</span>
-          <TreeNode node={document.root} focus={document.focus} {linked} onFocus={focus} onHover={ids => linked = ids} />
-        </div>
-      {/if}
-      {#if operadView !== 'tree'}
-        <div class="flow-panel">
-          <span class="surface-label operad-label">operad · svelteflow wiring</span>
-          <OperadFlow root={document.root} focus={document.focus} {linked} onFocus={focus} onHover={ids => linked = ids} onMove={move} />
-        </div>
-      {/if}
-    </div>
-
-    <div class="projections">
-      <div class="projection-heading">
-        <div><span class="kicker">algebras · concrete syntax</span><h2>Linearized fibers</h2></div>
-        <p>Words split into morphemes; <b>warm</b> hue = feature axis, <b>∅</b> = empty exponent, wavy = changed stem.
-          Hairline boxes below are the operad's image on the page. Click a morpheme to pin its tense.</p>
+    <div class="tiles {settings.layout}">
+      <div class="pane graph-pane">
+        {#if settings.operad === 'flow'}
+          <div class="flow-panel">
+            <span class="surface-label operad-label">operad · svelteflow wiring</span>
+            <OperadFlow root={document.root} focus={document.focus} {linked} onFocus={focus} onHover={ids => linked = ids} onMove={move} />
+          </div>
+        {:else}
+          <div class="tree-scroll">
+            <span class="surface-label operad-label">operad · tree</span>
+            <TreeNode node={document.root} focus={document.focus} {linked} onFocus={focus} onHover={ids => linked = ids} />
+          </div>
+        {/if}
       </div>
-      {#if pinned.length}
-        <div class="pins">
-          <span class="kicker">pinned</span>
-          {#each pinned as feature}<button onclick={() => pin([feature])}>{feature} ×</button>{/each}
-          <button class="clear" onclick={() => pinned = []}>clear</button>
-        </div>
-      {/if}
-      {#each projections as projection (projection.language)}
-        <AlgebraRow {projection} root={document.root} focus={document.focus} {linked} {pinned} onFocus={focus} onHover={ids => linked = ids} onPin={pin} />
-      {/each}
-      {#if error}<p class="error">{error}</p>{/if}
-    </div>
 
-    {#if complete && document.root.kind === 'apply'}
-      <TenseVariations root={document.root} {runtime} {linked} {pinned} onPick={pickTense} onHover={ids => linked = ids} onPin={pin} />
-    {/if}
+      <div class="pane sentences-pane projections">
+        <div class="projection-heading">
+          <div><span class="kicker">algebras · concrete syntax</span><h2>Sentences</h2></div>
+          <p>Warm hue = feature axis, <b>∅</b> = empty exponent, wavy = changed stem; hairline boxes are the operad's image.
+            Click a morpheme to pin its tense. Type below to parse a sentence into the operad.</p>
+        </div>
+        <SentenceBox {runtime} onLoad={loadParsed} />
+        {#if pinned.length}
+          <div class="pins">
+            <span class="kicker">pinned</span>
+            {#each pinned as feature}<button onclick={() => pin([feature])}>{feature} ×</button>{/each}
+            <button class="clear" onclick={() => pinned = []}>clear</button>
+          </div>
+        {/if}
+        <div class="sentence-lines {lineOrientation}" style:--languages={projections.length} bind:clientWidth={linesWidth}>
+          {#each projections as projection (projection.language)}
+            <AlgebraRow {projection} root={document.root} focus={document.focus} {linked} {pinned} orientation={lineOrientation} scale={lineOrientation === 'column' && fit.fits ? fit.scale : undefined} onFocus={focus} onHover={ids => linked = ids} onPin={pin} />
+          {/each}
+        </div>
+        {#if error}<p class="error">{error}</p>{/if}
+      </div>
+
+      <div class="pane details-pane">
+        {#if complete && document.root.kind === 'apply'}
+          <TenseVariations root={document.root} {runtime} {linked} {pinned} onPick={pickTense} onHover={ids => linked = ids} onPin={pin} />
+        {:else}
+          <p class="details-empty">Details such as tense variations appear once the sentence is complete.</p>
+        {/if}
+      </div>
+    </div>
   </section>
 </main>
 
