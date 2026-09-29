@@ -72,6 +72,9 @@ try {
         }
         try { await page.locator('.algebra-row .box').first().hover({ timeout: 2000 }) } catch { failures.push(`${where}: S box cannot be hovered`) }
         for (const problem of await page.evaluate(clippedOutlines)) failures.push(`${where}: hover S box: ${problem}`)
+        // The page itself never scrolls sideways (the top bar wraps instead).
+        const page_overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+        if (page_overflow > 0) failures.push(`${where}: the page is ${page_overflow}px wider than the window`)
         // One baseline: every morpheme's text in a sentence sits at the same height.
         const wobble = await page.evaluate(() => [...document.querySelectorAll('.algebra-row')].map(row => {
           const tops = [...row.querySelectorAll('.grid > .cell .piece .text')].map(text => text.getBoundingClientRect().top)

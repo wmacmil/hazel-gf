@@ -59,6 +59,9 @@ Four settings, each in the URL and remembered:
   reason for a refused wire.
 - `layout=right|left|above|below`: where the graph sits relative to the
   sentences; details (tense variations) stay across the bottom.
+- `colors=channels|pos`: channels (hue = abstract vs concrete) or parts of
+  speech (hue = POS, shade = abstract vs concrete; hues editable in the
+  palette popover). See docs/design.md.
 - `lines=auto|columns|rows`: languages side by side or one per row. `auto`
   measures the pane and uses columns only when all sentences fit together;
   every sentence then scales (0.55×–2×) to fill its space without clipping.

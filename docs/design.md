@@ -82,3 +82,22 @@ restricts the `Temp` palette and fades the tense variations it rules out.
 verb lexicon; `morphology.test.ts` also checks, for all 16416 sentences, that
 morphemes concatenate back to the word and that inflected words occur in
 GF's paradigm for their leaf.
+
+## Two colour theories (`colors=channels|pos`)
+
+`src/lib/palette.svelte.ts` is the only source of colour; every component asks
+it for a sort's *abstract* shade (operad cards, ports, wires) or *concrete*
+shade (phrase boxes, words).
+
+- **channels** (default): hue is the channel. Sorts take the cool half of the
+  wheel in the operad, feature axes the warm half in the text; morphemes are
+  coloured by their fiber. `style.test.ts` keeps the halves disjoint.
+- **pos**: hue is the part of speech (noun, pronoun, determiner, verb,
+  adposition, clause, tense · polarity), and *shade* is the channel: a deep
+  fill with a bright accent in the abstract operad, a light wash with dark ink
+  in the concrete text. A verb is the same hue as a card and as a word; only
+  its lightness says which projection it is in. Exponents take a deeper wash
+  than stems; feature labels still name the features. Each family's hue is
+  editable (the palette popover) and remembered locally.
+  `palette.test.ts` checks: one family per sort, one hue per family in both
+  projections, abstract dark (< 35% lightness) and concrete light (> 80%).

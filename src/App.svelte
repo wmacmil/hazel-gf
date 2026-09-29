@@ -18,10 +18,11 @@
   import { partialProjections } from './lib/projection'
   import { allowedTenses, pinnable, togglePins } from './lib/constraints'
   import { columnFit } from './lib/layout'
+  import { POS_FAMILIES, hueToHex, palette, resetHues, setFamilyColor, sortColor, type PosFamily } from './lib/palette.svelte'
   import { PROFILES, keySpecOf, resolveKey, type CommandId, type Region } from './lib/nav/commands'
   import { resolveNavigation, type Direction, type GraphNavigationConfig, type StructuralMove } from './lib/nav/graph-theory'
   import { flowGeometry, stepWord, structureOf, type WordStop } from './lib/nav/projections'
-  import { CATEGORY_COLORS, type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
+  import { type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
 
   const STORAGE_KEY = 'hazel-gf-document-v2'
 
@@ -30,6 +31,8 @@
    * mode — view (full width, parse to explore) or edit (the palette column appears);
    * operad — the operad as a SvelteFlow wiring diagram or a recursive tree;
    * layout — where the graph sits relative to the sentences; details stay below;
+   * colors — the colour theory (lib/palette.svelte.ts): channels (hue = abstract vs
+   *          concrete) or pos (hue = part of speech, shade = abstract vs concrete);
    * lines — languages as columns (l1 | l2 | l3) or rows; auto picks columns
    *         while every sentence is short.
    */
@@ -38,9 +41,10 @@
     operad: ['flow', 'tree'],
     layout: ['right', 'left', 'above', 'below'],
     lines: ['auto', 'columns', 'rows'],
+    colors: ['channels', 'pos'],
   } as const
   type Setting = keyof typeof OPTIONS
-  let settings = $state<{ [key in Setting]: (typeof OPTIONS)[key][number] }>({ mode: 'view', operad: 'flow', layout: 'right', lines: 'auto' })
+  let settings = $state<{ [key in Setting]: (typeof OPTIONS)[key][number] }>({ mode: 'view', operad: 'flow', layout: 'right', lines: 'auto', colors: 'channels' })
 
   function setSetting<K extends Setting>(key: K, value: (typeof OPTIONS)[K][number]) {
     settings = { ...settings, [key]: value }
@@ -90,6 +94,11 @@
   let runtimeState = $state<'connecting' | 'online' | 'offline'>('connecting')
   let error = $state('')
   let importInput: HTMLInputElement
+
+  // The palette follows the setting; per-POS hues are the user's, remembered locally.
+  const HUES_KEY = 'hazel-gf-hues'
+  $effect(() => { palette.theory = settings.colors })
+  $effect(() => { localStorage.setItem(HUES_KEY, JSON.stringify(palette.hues)) })
 
   /** Width of the sentences pane, measured live; `lines: auto` uses columns only when every sentence fits. */
   let linesWidth = $state(0)
@@ -287,6 +296,10 @@
   }
 
   onMount(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(HUES_KEY) ?? 'null') as Partial<Record<PosFamily, number>> | null
+      if (saved) palette.hues = { ...palette.hues, ...Object.fromEntries(Object.entries(saved).filter(([family, hue]) => family in POS_FAMILIES && typeof hue === 'number')) }
+    } catch { /* keep the defaults */ }
     const query = new URLSearchParams(location.search)
     for (const key of Object.keys(OPTIONS) as Setting[]) {
       const requested = query.get(key) ?? localStorage.getItem(`hazel-gf-${key}`)
@@ -317,7 +330,7 @@
   {#if settings.mode === 'edit'}
   <aside class="palette-panel">
     <div class="panel-heading">
-      <div><span class="kicker">focused sort</span><strong style:color={CATEGORY_COLORS[outputOf(focused)].ink}>{outputOf(focused)}</strong></div>
+      <div><span class="kicker">focused sort</span><strong style:color={sortColor(outputOf(focused)).concrete.ink}>{outputOf(focused)}</strong></div>
       <div class="history"><button disabled={!history.length} onclick={undo}>undo</button><button disabled={!future.length} onclick={redo}>redo</button></div>
     </div>
 
@@ -354,7 +367,7 @@
 
   <section class="workspace">
     <div class="workspace-bar">
-      <div><span class="kicker">abstract syntax</span><code>{isComplete(document.root) ? toGfTerm(document.root) : 'incomplete but well-typed'}</code></div>
+      <div><span class="kicker">abstract syntax</span><code title={isComplete(document.root) ? toGfTerm(document.root) : ''}>{isComplete(document.root) ? toGfTerm(document.root) : 'incomplete but well-typed'}</code></div>
       <div class="status" class:offline={runtimeState === 'offline'}>
         <span></span>{runtimeState === 'online' ? runtime.label : runtimeState === 'offline' ? 'GF offline · preview only' : 'connecting'}
       </div>
@@ -372,6 +385,23 @@
           </div>
         {/each}
       </div>
+      {#if settings.colors === 'pos'}
+        <details class="palette-editor">
+          <summary>palette</summary>
+          <div class="families">
+            {#each Object.entries(POS_FAMILIES) as [family, spec]}
+              <label>
+                <input type="color" value={hueToHex(palette.hues[family as PosFamily])}
+                  oninput={event => setFamilyColor(family as PosFamily, (event.currentTarget as HTMLInputElement).value)} />
+                <span>{spec.label}</span>
+                <i style:background={sortColor(spec.sorts[0]).abstract.fill} style:color={sortColor(spec.sorts[0]).abstract.accent}>abstract</i>
+                <i style:background={sortColor(spec.sorts[0]).concrete.wash} style:color={sortColor(spec.sorts[0]).concrete.ink}>concrete</i>
+              </label>
+            {/each}
+            <button onclick={resetHues}>reset hues</button>
+          </div>
+        </details>
+      {/if}
       <label class="worked">
         <span>worked trees</span>
         <select onchange={event => { const pick = WORKED[(event.currentTarget as HTMLSelectElement).value]; if (pick) commit(pick()); (event.currentTarget as HTMLSelectElement).value = '' }}>

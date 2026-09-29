@@ -1,7 +1,8 @@
 <script lang="ts">
   import { constructorById } from '../lib/grammar'
   import { outputOf } from '../lib/editor'
-  import { CATEGORY_COLORS, type Node, type NodeId } from '../lib/model'
+  import type { Node, NodeId } from '../lib/model'
+  import { sortColor } from '../lib/palette.svelte'
   import OperadCard from './OperadCard.svelte'
   import TreeNode from './TreeNode.svelte'
 
@@ -33,7 +34,7 @@
     <div class="children">
       {#each node.children as child, index (child.id)}
         <div class="child">
-          <span class="port" style:--port={CATEGORY_COLORS[declaration?.inputs[index] ?? outputOf(child)].glow}>
+          <span class="port" style:--port={sortColor(declaration?.inputs[index] ?? outputOf(child)).abstract.accent}>
             {declaration?.inputs[index]}
           </span>
           <TreeNode node={child} {focus} {linked} {onFocus} {onHover} />

@@ -3,7 +3,8 @@
   import Word from './Word.svelte'
   import { phraseBoxes } from '../lib/boxes'
   import { fitScale } from '../lib/layout'
-  import { CATEGORY_COLORS, type LinearizationProjection, type Node, type NodeId } from '../lib/model'
+  import type { LinearizationProjection, Node, NodeId } from '../lib/model'
+  import { sortColor } from '../lib/palette.svelte'
 
   let {
     projection, root, focus, linked = [], pinned = [], orientation = 'row', scale, active = false, onFocus, onHover, onPin,
@@ -66,8 +67,8 @@
           class:lit={highlighted(box.node)}
           style:grid-column={`${start + 1} / ${end + 2}`}
           style:grid-row={box.row + 2}
-          style:--sort={CATEGORY_COLORS[box.category].ink}
-          style:--sort-wash={CATEGORY_COLORS[box.category].wash}
+          style:--sort={sortColor(box.category).concrete.ink}
+          style:--sort-wash={sortColor(box.category).concrete.wash}
           title={`${box.category} · ${box.label}${box.runs.length > 1 ? ` · part ${part + 1}/${box.runs.length}` : ''}`}
           onclick={() => onFocus(box.node)}
           onmouseenter={() => onHover([box.node])}

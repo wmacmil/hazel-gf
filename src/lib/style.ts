@@ -1,4 +1,4 @@
-import { FEATURE_AXES, type FeatureAxis } from './morphology'
+import type { FeatureAxis } from './morphology'
 
 /**
  * Algebra colors: one hue per feature axis, all in the warm half of the wheel
@@ -11,15 +11,6 @@ export const FEATURE_COLORS: Record<FeatureAxis, { ink: string; wash: string }> 
   tense: { ink: '#b65616', wash: '#fce1cf' }, // 24°
   aspect: { ink: '#a1700d', wash: '#fcefcf' }, // 42°
   definiteness: { ink: '#8e850b', wash: '#fcf9cf' }, // 56°
-}
-
-/** A morpheme's color is a pure function of its fiber: one axis → pure, several → blend, none → ink. */
-export function morphemeStyle(features: string[]): string {
-  const axes = [...new Set(features.map(feature => FEATURE_AXES[feature]).filter(Boolean))]
-  const colors = axes.map(axis => FEATURE_COLORS[axis])
-  if (!colors.length) return ''
-  if (colors.length === 1) return `--m-ink:${colors[0].ink};--m-wash:${colors[0].wash}`
-  return `--m-ink:${colors[0].ink};--m-wash:linear-gradient(100deg, ${colors.map(color => color.wash).join(', ')})`
 }
 
 export function hueOf(hex: string): number {

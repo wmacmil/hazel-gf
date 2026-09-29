@@ -1,6 +1,7 @@
 <script lang="ts">
   import { constructorById, profile } from '../lib/grammar'
-  import { CATEGORY_COLORS, type Node } from '../lib/model'
+  import type { Node } from '../lib/model'
+  import { sortColor } from '../lib/palette.svelte'
 
   /** One operation (or typed hole) of the operad, shared by the tree and flow views. */
   let { node, focused = false, linked = false }: { node: Node; focused?: boolean; linked?: boolean } = $props()
@@ -9,7 +10,7 @@
   const declaration = $derived(node.kind === 'apply' ? constructorById.get(node.constructor) : undefined)
 </script>
 
-<div class="card" class:focused class:linked class:hole={node.kind === 'hole'} style:--glow={CATEGORY_COLORS[category].glow}>
+<div class="card" class:focused class:linked class:hole={node.kind === 'hole'} style:--glow={sortColor(category).abstract.accent} style:--card-fill={sortColor(category).abstract.fill}>
   {#if node.kind === 'hole'}
     <!-- A hole has no operation yet; its sort is all there is. -->
     <code class="operation">⟦{category}⟧</code>
@@ -27,12 +28,12 @@
      of the wheel); no words and no feature values ever appear here. */
   .card {
     display: grid; gap: .12rem; min-width: 9rem; max-width: 13rem; padding: .5rem .7rem; text-align: left;
-    color: #dfe7f2; background: #131c2a;
+    color: #dfe7f2; background: var(--card-fill, #131c2a);
     border: 1px solid color-mix(in srgb, var(--glow) 55%, transparent); border-left: 4px solid var(--glow); border-radius: 4px;
     box-shadow: 0 0 0 1px #0b111a, 0 0 18px -8px var(--glow);
     font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   }
-  .card:hover { background: #172234; }
+  .card:hover { filter: brightness(1.15); }
   .card.focused { outline: 2px solid #f4f7fb; outline-offset: 3px; }
   .card.linked:not(.focused) { outline: 2px dashed #f4f7fb; outline-offset: 3px; }
   .card.hole { border-style: dashed; background: #0e1520; }

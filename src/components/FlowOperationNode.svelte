@@ -2,7 +2,8 @@
   import { Handle, Position, type NodeProps } from '@xyflow/svelte'
   import OperadCard from './OperadCard.svelte'
   import { getContext } from 'svelte'
-  import { CATEGORY_COLORS, type CategoryId, type Node, type NodeId } from '../lib/model'
+  import type { CategoryId, Node, NodeId } from '../lib/model'
+  import { sortColor } from '../lib/palette.svelte'
 
   type Data = { node: Node; inputs: CategoryId[]; isRoot: boolean }
   let { data }: NodeProps & { data: Data } = $props()
@@ -13,7 +14,7 @@
 
 <div class="operation">
   {#if !data.isRoot}
-    <Handle type="source" id="out" position={Position.Top} style={`--port:${CATEGORY_COLORS[sort].glow}`} class="port-handle" />
+    <Handle type="source" id="out" position={Position.Top} style={`--port:${sortColor(sort).abstract.accent}`} class="port-handle" />
   {/if}
   <OperadCard node={data.node} focused={highlight.focus === data.node.id} linked={highlight.linked.includes(data.node.id)} />
   {#each data.inputs as input, port (port)}
@@ -22,9 +23,9 @@
       id={`in-${port}`}
       position={Position.Bottom}
       class="port-handle"
-      style={`left:${((port + 1) / (data.inputs.length + 1)) * 100}%;--port:${CATEGORY_COLORS[input].glow}`}
+      style={`left:${((port + 1) / (data.inputs.length + 1)) * 100}%;--port:${sortColor(input).abstract.accent}`}
     />
-    <span class="port-label" style:left={`${((port + 1) / (data.inputs.length + 1)) * 100}%`} style:--port={CATEGORY_COLORS[input].glow}>{input}</span>
+    <span class="port-label" style:left={`${((port + 1) / (data.inputs.length + 1)) * 100}%`} style:--port={sortColor(input).abstract.accent}>{input}</span>
   {/each}
 </div>
 

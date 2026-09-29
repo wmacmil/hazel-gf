@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { LinearizedSegment, Morpheme, NodeId } from '../lib/model'
-  import { morphemeStyle } from '../lib/style'
+  import { morphemeStyle } from '../lib/palette.svelte'
 
   let {
     segment, active = false, compact = false, pinned = [], onHover, onFocus, onPin,
@@ -26,7 +26,7 @@
       type="button"
       class="piece {piece.role}"
       class:pinned={isPinned(piece)}
-      style={morphemeStyle(piece.features)}
+      style={morphemeStyle(piece.features, segment.categories[0], piece.role)}
       title={piece.features.length ? piece.features.join(' + ') : piece.role}
       onmouseenter={() => onHover(piece.realizedBy)}
       onmouseleave={() => onHover([])}

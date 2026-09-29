@@ -7,7 +7,8 @@
   import CameraFollow from './CameraFollow.svelte'
   import { moveProblem } from '../lib/editor'
   import { operadFlow, portOf } from '../lib/flow'
-  import { CATEGORY_COLORS, type Node, type NodeId } from '../lib/model'
+  import type { Node, NodeId } from '../lib/model'
+  import { sortColor } from '../lib/palette.svelte'
 
   let {
     root, focus, linked = [], camera, fitSeq = 0, onFocus, onHover, onMove,
@@ -42,7 +43,7 @@
     nodes = flow.nodes.map(node => ({ ...node, data: { ...node.data, isRoot: node.id === root.id } }))
     edges = flow.edges.map(edge => ({
       ...edge,
-      style: `stroke:${CATEGORY_COLORS[edge.data.sort].glow};stroke-width:1.6;opacity:.8`,
+      style: `stroke:${sortColor(edge.data.sort).abstract.accent};stroke-width:1.6;opacity:.8`,
     }))
   })
 
