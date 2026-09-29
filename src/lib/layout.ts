@@ -22,7 +22,9 @@ const clamp = (value: number) => Math.min(SCALE.max, Math.max(SCALE.min, value))
 export function columnFit(projections: LinearizationProjection[], paneWidth: number, gap = 24): { fits: boolean; scale: number } {
   if (!projections.length || paneWidth <= 0) return { fits: false, scale: 1 }
   const total = projections.reduce((sum, projection) => sum + sentenceWidth(projection), 0) + gap * (projections.length - 1)
-  return total <= paneWidth ? { fits: true, scale: clamp((paneWidth - gap * (projections.length - 1)) / (total - gap * (projections.length - 1))) } : { fits: false, scale: 1 }
+  // Also used when columns are forced: then the shared scale may shrink them (never below SCALE.min).
+  const gaps = gap * (projections.length - 1)
+  return { fits: total <= paneWidth, scale: clamp((paneWidth - gaps) / (total - gaps)) }
 }
 
 /** Scale that makes one sentence fill (but never overflow) the width available to it. */

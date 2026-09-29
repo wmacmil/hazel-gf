@@ -19,6 +19,7 @@ describe('sentences are as wide as they are long', () => {
     expect(columnFit(long, 500).fits).toBe(false)
     expect(columnFit(long, 1600).fits).toBe(true)
     expect(columnFit(short, 0).fits).toBe(false)
+    expect(columnFit(long, 500).scale).toBeLessThan(1) // forced columns shrink rather than spill
   })
 
   it('scales to fill the space without ever overflowing it', () => {

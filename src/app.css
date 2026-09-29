@@ -53,13 +53,18 @@ button:disabled { opacity: .38; cursor: not-allowed; }
 .tiles.below { grid-template-columns: minmax(0, 1fr); grid-template-areas: "sentences" "graph" "details"; }
 .pane { min-width: 0; }
 .graph-pane { grid-area: graph; background: #0e1520; }
-.sentences-pane { grid-area: sentences; container: sentences / inline-size; min-width: 0; overflow: hidden; }
+.sentences-pane { grid-area: sentences; container: sentences / inline-size; min-width: 0; }
 .details-pane { grid-area: details; border-top: 1px solid #d9d1c4; background: #fbf8f1; }
 .tiles.right .graph-pane { border-left: 1px solid #22314a; }
 .tiles.left .graph-pane { border-right: 1px solid #22314a; }
 .tiles.right .tree-scroll, .tiles.left .tree-scroll { height: 100%; justify-content: start; }
 .sentence-lines.row { display: grid; }
 .sentence-lines.column { display: grid; grid-template-columns: repeat(var(--languages), max-content); justify-content: space-between; column-gap: 24px; border-top: 1px solid #e3dccf; margin-top: .6rem; }
+/* Forced columns that cannot fit even at the smallest scale scroll instead of spilling into the graph. */
+.sentence-lines.column { overflow-x: auto; padding: 6px; margin-left: -6px; margin-right: -6px; }
+.sentence-lines.column::-webkit-scrollbar { height: 8px; }
+.sentence-lines.column::-webkit-scrollbar-track { background: #efe9df; border-radius: 4px; }
+.sentence-lines.column::-webkit-scrollbar-thumb { background: #a89e8f; border-radius: 4px; }
 .details-empty { margin: 0; padding: 1.2rem 1.55rem; color: #8a8175; font: .66rem ui-monospace, monospace; }
 .view-settings { display: flex; flex-wrap: wrap; gap: .4rem; }
 .view-toggle span { align-self: center; padding: 0 .45rem; color: #8a8175; font: 700 .56rem ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }

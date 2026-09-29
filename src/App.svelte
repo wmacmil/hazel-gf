@@ -345,7 +345,7 @@
         {/if}
         <div class="sentence-lines {lineOrientation}" style:--languages={projections.length} bind:clientWidth={linesWidth}>
           {#each projections as projection (projection.language)}
-            <AlgebraRow {projection} root={document.root} focus={document.focus} {linked} {pinned} orientation={lineOrientation} scale={lineOrientation === 'column' && fit.fits ? fit.scale : undefined} onFocus={focus} onHover={ids => linked = ids} onPin={pin} />
+            <AlgebraRow {projection} root={document.root} focus={document.focus} {linked} {pinned} orientation={lineOrientation} scale={lineOrientation === 'column' ? fit.scale : undefined} onFocus={focus} onHover={ids => linked = ids} onPin={pin} />
           {/each}
         </div>
         {#if error}<p class="error">{error}</p>{/if}

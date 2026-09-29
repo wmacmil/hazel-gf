@@ -31,12 +31,13 @@
   $effect(() => {
     void projection
     if (!content) return
-    const cells = [...content.querySelectorAll<HTMLElement>(':scope > .cell')]
-    if (!cells.length) return
+    // The whole grid (words and phrase boxes), unscaled.
     const zoom = Number(getComputedStyle(content).zoom) || 1
-    natural = (cells.at(-1)!.getBoundingClientRect().right - cells[0].getBoundingClientRect().left) / zoom
+    natural = content.getBoundingClientRect().width / zoom
   })
-  const zoom = $derived(scale ?? fitScale(natural, available))
+  /** Room kept around the sentence for focus outlines (2px + 2px offset) so they are never clipped. */
+  const OUTLINE_ROOM = 6
+  const zoom = $derived(scale ?? fitScale(natural, available - 2 * OUTLINE_ROOM - 3))
   const highlighted = (id: NodeId) => id === focus || linked.includes(id)
   const wordActive = (segmentId: string) =>
     [focus, ...linked].some(id => (projection.nodeYields[id] ?? []).includes(segmentId))
@@ -82,7 +83,15 @@
   .language strong { font: 600 1rem Georgia, serif; color: #26231e; }
   .language span { color: #8a8175; font: .58rem ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
   .partial .language span { color: #a24e2d; }
-  .fit { min-width: 0; overflow-x: auto; }
+  /* Scrolls only when a sentence cannot fit even at the smallest scale; padded so
+     focus outlines stay inside the scroll box, and a visible scrollbar when it does scroll. */
+  .fit { min-width: 0; overflow-x: auto; padding: 6px; margin: -6px; }
+  /* A styled ::-webkit-scrollbar is always visible (macOS overlay scrollbars would hide it);
+     setting scrollbar-width would switch Chrome back to overlays, so that is Firefox-only. */
+  .fit::-webkit-scrollbar { height: 8px; }
+  .fit::-webkit-scrollbar-track { background: #efe9df; border-radius: 4px; }
+  .fit::-webkit-scrollbar-thumb { background: #a89e8f; border-radius: 4px; }
+  @supports not selector(::-webkit-scrollbar) { .fit { scrollbar-width: thin; scrollbar-color: #a89e8f #efe9df; } }
   .grid { display: grid; width: max-content; max-width: none; column-gap: .4rem; row-gap: 3px; align-items: start; padding-bottom: .2rem; }
   .cell { grid-row: 1; margin-bottom: .45rem; }
   /* The operad's image on the paper: hairline boxes in the sort's (cool) hue. */

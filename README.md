@@ -141,6 +141,11 @@ This compiles only the small application grammar, type-checks the Svelte app,
 runs the editor/provenance tests, and checks three golden GF linearizations.
 It does not build the RGL, Hazel, OCaml, GHC, or an opam switch.
 
+`npm run check:layout` (part of verify and deploy) drives the system Chrome
+through every layout, example, and line mode, hovering the edge words and
+boxes, and fails on a clipped focus outline, avoidable overflow, a pane
+covering a sentence, or a needed scrollbar that is not visible.
+
 ## Architecture
 
 - `grammar/` — shared abstract syntax and three RGL-backed concretes.

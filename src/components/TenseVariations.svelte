@@ -80,7 +80,12 @@
   .heading { display: flex; justify-content: space-between; align-items: start; gap: 1rem; margin-bottom: .7rem; }
   .heading h2 { margin: .1rem 0 0; font: 700 1.15rem Georgia, serif; }
   .heading p { max-width: 24rem; margin: 0; color: #6f675c; font-size: .78rem; }
-  .grid { display: grid; gap: .2rem; overflow-x: auto; }
+  /* Padded so focus outlines on the edge words are not clipped by the scroll box. */
+  .grid { display: grid; gap: .2rem; overflow-x: auto; padding: 6px; margin: -6px; }
+  .grid::-webkit-scrollbar { height: 8px; }
+  .grid::-webkit-scrollbar-track { background: #efe9df; border-radius: 4px; }
+  .grid::-webkit-scrollbar-thumb { background: #a89e8f; border-radius: 4px; }
+  @supports not selector(::-webkit-scrollbar) { .grid { scrollbar-width: thin; scrollbar-color: #a89e8f #efe9df; } }
   .row {
     display: grid; grid-template-columns: 8.5rem repeat(var(--languages), minmax(12rem, 1fr)); gap: .8rem; align-items: center;
     padding: .38rem .5rem; text-align: left; font: inherit; color: inherit; background: transparent;
