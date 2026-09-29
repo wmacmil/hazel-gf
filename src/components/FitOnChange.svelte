@@ -1,14 +1,22 @@
 <script lang="ts">
   import { useNodesInitialized, useSvelteFlow } from '@xyflow/svelte'
 
-  /** Re-fit the viewport once cards are measured, and again whenever `key` (the tree) changes. */
+  /**
+   * Fit the scene on entry and when a different tree is loaded (`key` = the root's id),
+   * never on selection, hover, or pointer focus: the camera follows keyboard focus only
+   * (docconfig graph-interaction theory §4). Clicking a node used to re-fit, because
+   * selecting it re-evaluated `initialized` and re-ran this effect.
+   */
   let { key }: { key: string } = $props()
   const { fitView } = useSvelteFlow()
   const initialized = useNodesInitialized()
+  let fitted: string | undefined
 
   $effect(() => {
-    void key
+    const current = key
+    if (!initialized.current || current === fitted) return
+    fitted = current
     // Two frames: the rebuilt nodes are measured before the viewport is fitted.
-    if (initialized.current) requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.12, duration: 150 })))
+    requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.12, duration: 150 })))
   })
 </script>

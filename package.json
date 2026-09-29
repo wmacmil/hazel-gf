@@ -13,13 +13,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "smoke:gf": "node scripts/smoke-gf.mjs",
-    "verify": "npm run build && npm run check && npm test && npm run smoke:gf && npm run check:layout",
+    "verify": "npm run build && npm run check && npm test && npm run smoke:gf && npm run check:layout && node scripts/check-navigation.mjs",
     "build:static": "VITE_GF_MODE=browser vite build",
     "preview:static": "npm run build:static && vite preview --port 8044",
-    "deploy": "npm run gf:build && npm run check && npm test && npm run check:layout && VITE_BASE=/hazel-gf/ npm run build:static && ./scripts/deploy-pages.sh",
+    "deploy": "npm run gf:build && npm run check && npm test && npm run check:layout && node scripts/check-navigation.mjs && VITE_BASE=/hazel-gf/ npm run build:static && ./scripts/deploy-pages.sh",
     "oracle": "npm run gf:build && node scripts/oracle.mjs",
     "pretest": "npm run gf:build",
-    "check:layout": "VITE_BASE=/hazel-gf/ npm run build:static && node scripts/check-layout.mjs"
+    "check:layout": "VITE_BASE=/hazel-gf/ npm run build:static && node scripts/check-layout.mjs",
+    "check:nav": "VITE_BASE=/hazel-gf/ npm run build:static && node scripts/check-navigation.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "6.2.4",

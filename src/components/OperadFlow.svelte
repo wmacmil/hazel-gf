@@ -4,12 +4,13 @@
   import { setContext } from 'svelte'
   import FlowOperationNode from './FlowOperationNode.svelte'
   import FitOnChange from './FitOnChange.svelte'
+  import CameraFollow from './CameraFollow.svelte'
   import { moveProblem } from '../lib/editor'
   import { operadFlow, portOf } from '../lib/flow'
   import { CATEGORY_COLORS, type Node, type NodeId } from '../lib/model'
 
   let {
-    root, focus, linked = [], onFocus, onHover, onMove,
+    root, focus, linked = [], camera, fitSeq = 0, onFocus, onHover, onMove,
   }: {
     root: Node
     focus: NodeId
@@ -17,15 +18,19 @@
     onFocus: (id: NodeId) => void
     onHover: (ids: NodeId[]) => void
     onMove: (subtree: NodeId, parent: NodeId, port: number) => void
+    /** Keyboard focus moves the camera; bumping `seq` requests a move to `nodeId`. */
+    camera?: { nodeId: string; seq: number }
+    /** Bumped to fit the whole tree (the `=` key). */
+    fitSeq?: number
   } = $props()
+  let width = $state(0)
+  let height = $state(0)
 
   const nodeTypes = { operation: FlowOperationNode }
   let nodes = $state.raw<FlowNodeType[]>([])
   let edges = $state.raw<Edge[]>([])
   /** The kernel's reason for refusing the connection being drawn, shown under the canvas. */
   let refusal = $state('')
-  /** Tree shape only (not focus), so hovering never re-fits the viewport. */
-  const shape = $derived(JSON.stringify(root, (key, value) => key === 'id' ? undefined : value))
 
   // The canvas is a projection of the document: rebuilt from the tree on every
   // change, never edited in place. Edits go through editor.ts via onMove.
@@ -48,7 +53,7 @@
   }
 </script>
 
-<div class="operad-flow">
+<div class="operad-flow" bind:clientWidth={width} bind:clientHeight={height}>
   <SvelteFlow
     bind:nodes
     bind:edges
@@ -68,7 +73,8 @@
   >
     <Background variant={BackgroundVariant.Lines} gap={14} bgColor="#0e1520" patternColor="#182434" />
     <Controls showLock={false} />
-    <FitOnChange key={shape} />
+    <FitOnChange key={root.id} />
+    <CameraFollow request={camera} {width} {height} {fitSeq} />
   </SvelteFlow>
   <p class="hint" class:refused={refusal}>
     {refusal || 'Drag a node’s top handle onto a matching hole port to move that subtree. The kernel checks every wire.'}

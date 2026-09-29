@@ -11,13 +11,16 @@
   import type { Candidate } from './lib/writing'
   import { producers, profile, wrappers } from './lib/grammar'
   import {
-    clearFocused, fillFocused, findNode, isComplete, moveFocus, newDocument, outputOf,
+    clearFocused, fillFocused, findNode, isComplete, newDocument, outputOf,
     fromGfTerm, insertAt, moveSubtree, swapLeaf, toGfTerm, validateDocument, wrapFocused,
   } from './lib/editor'
   import { agreementExample, exampleDocument, modifierExample, prepositionExample } from './lib/examples'
   import { partialProjections } from './lib/projection'
   import { allowedTenses, pinnable, togglePins } from './lib/constraints'
   import { columnFit } from './lib/layout'
+  import { PROFILES, keySpecOf, resolveKey, type CommandId, type Region } from './lib/nav/commands'
+  import { resolveNavigation, type Direction, type GraphNavigationConfig, type StructuralMove } from './lib/nav/graph-theory'
+  import { boxGeometry, flowGeometry, stepWord, structureOf, type WordStop } from './lib/nav/projections'
   import { CATEGORY_COLORS, type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
 
   const STORAGE_KEY = 'hazel-gf-document-v2'
@@ -167,6 +170,70 @@
 
   function focus(id: NodeId) { document = { ...document, focus: id } }
 
+  /**
+   * Navigation (ported from the document-configuration-system; see src/lib/nav).
+   * One focused node, two regions: `tree` (the operad graph) and `sentence` (the
+   * text with its phrase-box tree). hjkl moves in the active region's tree over
+   * that region's geometry; s/d walks the active sentence word by word; both
+   * trees highlight the same node, so they always move together.
+   */
+  let region = $state<Region>('tree')
+  let activeLanguage = $state(0)
+  /** Keyboard moves bump `seq`; the graph camera follows them and nothing else. */
+  let camera = $state<{ nodeId: string; seq: number }>()
+  let fitSeq = $state(0)
+  /** The s/d lane's own position (a word, not a tree node). */
+  let wordStop: WordStop | undefined
+  const TREE_NAV: GraphNavigationConfig = { strategy: 'hybrid-tree-v1', spatialAlgorithm: 'css-nav-grid-v1', boundary: 'stop', structuralSequence: 'siblings' }
+  const BOX_NAV: GraphNavigationConfig = { ...TREE_NAV, halfPlane: 'edge' }
+  const activeProjection = $derived(projections[Math.min(activeLanguage, projections.length - 1)])
+
+  function moveTo(target: NodeId | null | undefined) {
+    if (!target || !findNode(document.root, target)) return
+    focus(target)
+    camera = { nodeId: target, seq: (camera?.seq ?? 0) + 1 }
+  }
+
+  function navigate(intent: { kind: 'direction'; direction: Direction } | { kind: 'structure'; move: StructuralMove }) {
+    const sentenceTree = region === 'sentence' && activeProjection
+    const decision = resolveNavigation({
+      focusedId: document.focus,
+      structure: structureOf(document.root),
+      geometry: sentenceTree ? boxGeometry(document.root, activeProjection) : flowGeometry(document.root),
+      orientation: 'top-to-bottom',
+    }, intent, sentenceTree ? BOX_NAV : TREE_NAV)
+    moveTo(decision?.targetId)
+  }
+
+  /** The one adapter from semantic command ids to actions. */
+  function dispatch(command: CommandId) {
+    switch (command) {
+      case 'region.toggle': region = region === 'tree' ? 'sentence' : 'tree'; return
+      case 'nav.west': return navigate({ kind: 'direction', direction: 'west' })
+      case 'nav.east': return navigate({ kind: 'direction', direction: 'east' })
+      case 'nav.north': return navigate({ kind: 'direction', direction: 'north' })
+      case 'nav.south': return navigate({ kind: 'direction', direction: 'south' })
+      case 'nav.parent': return navigate({ kind: 'structure', move: 'parent' })
+      case 'nav.first-child': return navigate({ kind: 'structure', move: 'first-child' })
+      case 'nav.previous': return navigate({ kind: 'structure', move: 'previous' })
+      case 'nav.next': return navigate({ kind: 'structure', move: 'next' })
+      case 'word.previous':
+      case 'word.next': {
+        if (!activeProjection) return
+        const stop = stepWord(document.root, activeProjection, document.focus, command === 'word.next' ? 'next' : 'previous', wordStop)
+        if (stop) { wordStop = stop; moveTo(stop.nodeId) }
+        return
+      }
+      case 'language.previous':
+      case 'language.next': {
+        const count = Math.max(1, projections.length)
+        activeLanguage = (activeLanguage + (command === 'language.next' ? 1 : count - 1)) % count
+        return
+      }
+      case 'camera.fit': fitSeq += 1; return
+    }
+  }
+
   function keydown(event: KeyboardEvent) {
     const typing = event.target as HTMLElement | null
     if (typing && ['INPUT', 'TEXTAREA', 'SELECT'].includes(typing.tagName)) return
@@ -177,9 +244,8 @@
       return
     }
     if (modifier && event.key.toLowerCase() === 'y') { event.preventDefault(); redo(); return }
-    const direction = event.key === 'ArrowUp' ? 'parent' : event.key === 'ArrowDown' ? 'firstChild'
-      : event.key === 'ArrowLeft' ? 'previous' : event.key === 'ArrowRight' ? 'next' : undefined
-    if (direction) { event.preventDefault(); document = moveFocus(document, direction); return }
+    const command = modifier ? null : resolveKey(PROFILES.vim, region, keySpecOf(event))
+    if (command) { event.preventDefault(); dispatch(command); return }
     if (settings.mode === 'edit' && (event.key === 'Backspace' || event.key === 'Delete')) {
       const target = event.target as HTMLElement | null
       if (target && ['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return
@@ -288,6 +354,9 @@
       <div class="status" class:offline={runtimeState === 'offline'}>
         <span></span>{runtimeState === 'online' ? runtime.label : runtimeState === 'offline' ? 'GF offline · preview only' : 'connecting'}
       </div>
+      <div class="region-chip" data-region={region} title="Tab switches region · hjkl moves in its tree · s/d moves along the sentence · [ ] changes language · = fits">
+        <span>focus</span><b>{region}</b><kbd>hjkl</kbd><kbd>s d</kbd><kbd>[ ]</kbd><kbd>⇥</kbd>
+      </div>
       <div class="view-settings">
         {#each Object.entries(OPTIONS) as [key, values]}
           <div class="view-toggle" role="radiogroup" aria-label={key}>
@@ -315,11 +384,11 @@
     </div>
 
     <div class="tiles {settings.layout}">
-      <div class="pane graph-pane">
+      <div class="pane graph-pane" role="region" aria-label="Operad tree" class:active-region={region === 'tree'} onpointerdown={() => region = 'tree'}>
         {#if settings.operad === 'flow'}
           <div class="flow-panel">
             <span class="surface-label operad-label">operad · svelteflow wiring</span>
-            <OperadFlow root={document.root} focus={document.focus} {linked} onFocus={focus} onHover={ids => linked = ids} onMove={move} />
+            <OperadFlow root={document.root} focus={document.focus} {linked} {camera} {fitSeq} onFocus={focus} onHover={ids => linked = ids} onMove={move} />
           </div>
         {:else}
           <div class="tree-scroll">
@@ -329,7 +398,7 @@
         {/if}
       </div>
 
-      <div class="pane sentences-pane projections">
+      <div class="pane sentences-pane projections" role="region" aria-label="Sentences" class:active-region={region === 'sentence'} onpointerdown={() => region = 'sentence'}>
         <div class="projection-heading">
           <div><span class="kicker">algebras · concrete syntax</span><h2>Sentences</h2></div>
           <p>Warm hue = feature axis, <b>∅</b> = empty exponent, wavy = changed stem; hairline boxes are the operad's image.
@@ -344,8 +413,8 @@
           </div>
         {/if}
         <div class="sentence-lines {lineOrientation}" style:--languages={projections.length} bind:clientWidth={linesWidth}>
-          {#each projections as projection (projection.language)}
-            <AlgebraRow {projection} root={document.root} focus={document.focus} {linked} {pinned} orientation={lineOrientation} scale={lineOrientation === 'column' ? fit.scale : undefined} onFocus={focus} onHover={ids => linked = ids} onPin={pin} />
+          {#each projections as projection, index (projection.language)}
+            <AlgebraRow active={region === 'sentence' && index === Math.min(activeLanguage, projections.length - 1)} {projection} root={document.root} focus={document.focus} {linked} {pinned} orientation={lineOrientation} scale={lineOrientation === 'column' ? fit.scale : undefined} onFocus={focus} onHover={ids => linked = ids} onPin={pin} />
           {/each}
         </div>
         {#if error}<p class="error">{error}</p>{/if}
@@ -363,6 +432,6 @@
 </main>
 
 <footer>
-  <span>↑ parent · ↓ child · ←/→ sibling · ⌘Z undo</span>
+  <span>⇥ tree ⇄ sentence · hjkl move in its tree · s/d along the sentence · [ ] language · = fit · ⌥hjkl structural · ⌘Z undo</span>
   <span>Incomplete trees are owned by the browser; GF never receives raw metavariables.</span>
 </footer>

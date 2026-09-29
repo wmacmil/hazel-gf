@@ -6,7 +6,7 @@
   import { CATEGORY_COLORS, type LinearizationProjection, type Node, type NodeId } from '../lib/model'
 
   let {
-    projection, root, focus, linked = [], pinned = [], orientation = 'row', scale, onFocus, onHover, onPin,
+    projection, root, focus, linked = [], pinned = [], orientation = 'row', scale, active = false, onFocus, onHover, onPin,
   }: {
     projection: LinearizationProjection
     root: Node
@@ -17,6 +17,8 @@
     orientation?: 'row' | 'column'
     /** A shared scale (columns); without it the row measures itself and scales to fit its width. */
     scale?: number
+    /** The sentence s/d walks and whose phrase boxes hjkl moves over (sentence region). */
+    active?: boolean
     onFocus: (id: NodeId) => void
     onHover: (ids: NodeId[]) => void
     onPin: (features: string[]) => void
@@ -43,7 +45,7 @@
     [focus, ...linked].some(id => (projection.nodeYields[id] ?? []).includes(segmentId))
 </script>
 
-<section class="algebra-row" class:partial={projection.source === 'partial'} class:column={orientation === 'column'}>
+<section class="algebra-row" class:partial={projection.source === 'partial'} class:column={orientation === 'column'} class:active-line={active}>
   <div class="language">
     <strong>{profileOf(projection.language).label}</strong>
     <span>{projection.source === 'gf' ? 'GF algebra' : 'typed preview'}</span>
@@ -83,6 +85,8 @@
   .language strong { font: 600 1rem Georgia, serif; color: #26231e; }
   .language span { color: #8a8175; font: .58rem ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
   .partial .language span { color: #a24e2d; }
+  .active-line { box-shadow: inset 3px 0 0 #5a3e8c; padding-left: .6rem; }
+  .active-line .language strong { color: #5a3e8c; }
   /* Scrolls only when a sentence cannot fit even at the smallest scale; padded so
      focus outlines stay inside the scroll box, and a visible scrollbar when it does scroll. */
   .fit { min-width: 0; overflow-x: auto; padding: 6px; margin: -6px; }
