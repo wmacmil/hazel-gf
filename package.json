@@ -1,0 +1,31 @@
+{
+  "name": "hazel-gf",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "gf:build": "./scripts/build-gf.sh",
+    "predev": "npm run gf:build",
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run gf:build && vite build",
+    "serve": "npm run build && node scripts/serve.mjs",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke:gf": "./scripts/smoke-gf.sh",
+    "verify": "npm run build && npm run check && npm test && npm run smoke:gf",
+    "precompute": "npm run gf:build && node scripts/precompute.mjs",
+    "build:static": "VITE_GF_MODE=static vite build",
+    "preview:static": "npm run build:static && vite preview --port 8044",
+    "deploy": "npm run check && npm test && VITE_BASE=/hazel-gf/ npm run build:static && ./scripts/deploy-pages.sh"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "6.2.4",
+    "@types/node": "24.10.0",
+    "svelte": "5.57.1",
+    "svelte-check": "4.7.6",
+    "typescript": "5.9.3",
+    "vite": "7.3.6",
+    "vitest": "3.2.7"
+  }
+}

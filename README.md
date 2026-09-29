@@ -1,0 +1,84 @@
+# Hazel × GF
+
+A typed structure editor for a small Grammatical Framework clause grammar. It
+reuses Hazelnut's semantic ideas—typed holes, a focused tree, and
+type-preserving edit actions—without embedding or compiling the Hazel OCaml
+application.
+
+One shared abstract tree is linearized into English, German, and Swedish by
+the locally installed GF 3.11 runtime. Category hues are shared by the tree,
+typed holes, and surface spans. Focus and hover identify exact node
+occurrences; morphology annotations expose fused and empty exponents.
+
+**Try it:** <https://wmacmil.github.io/hazel-gf/> — no install needed.
+
+The hosted version needs no GF server. The grammar has no recursion, so it
+has exactly 2052 complete sentences; `npm run precompute` asks GF for every
+one of them and stores GF's bracketed output in `public/static/`. The page
+then looks up the tree you build instead of calling GF. Incomplete trees are
+previewed in the browser either way.
+
+## Run
+
+```sh
+npm install
+npm run dev
+```
+
+Open <http://127.0.0.1:5173/>. The command starts both the GF HTTP sidecar and
+Vite, and stops both on Ctrl-C.
+
+For the production-shaped server:
+
+```sh
+npm run serve
+```
+
+Open <http://127.0.0.1:8043/>. GF serves both the static bundle and
+`HazelGF.pgf`, so no CORS configuration or custom backend is involved.
+
+Worked trees can also be opened directly:
+
+- `/?example=see`
+- `/?example=agreement`
+
+If the RGL is somewhere other than `~/code/gf/gf-rgl/dist/alltenses`, set
+`GF_RGL_DIST` before building.
+
+## Static build (GitHub Pages)
+
+```sh
+npm run precompute          # needs GF + RGL; regenerates public/static/*.json
+npm run preview:static      # static bundle, no GF server
+```
+
+`npm run deploy` type-checks, tests, builds the static bundle and force-pushes
+`dist/` to the `gh-pages` branch, which GitHub Pages serves. Re-run
+`npm run precompute` and commit the result whenever the grammar changes;
+`src/lib/static.test.ts` fails if the table no longer matches the grammar.
+
+## Verify
+
+```sh
+npm run verify
+```
+
+This compiles only the small application grammar, type-checks the Svelte app,
+runs the editor/provenance tests, and checks three golden GF linearizations.
+It does not build the RGL, Hazel, OCaml, GHC, or an opam switch.
+
+## Architecture
+
+- `grammar/` — shared abstract syntax and three RGL-backed concretes.
+- `src/lib/editor.ts` — typed holes, focus movement, structural edits, import
+  validation, and GF serialization.
+- `src/lib/gf.ts` — the narrow GF HTTP adapter.
+- `src/lib/projection.ts` — bracket-token provenance, node yields, and
+  grammar-owned annotations for Swedish suffixed definiteness and agreement.
+- `src/components/` — recursive colored tree and linked linearization rows.
+
+Incomplete trees never reach GF. The browser shows category-marked placeholders
+until the term is complete; GF then becomes authoritative for the surface text.
+
+See [docs/design.md](docs/design.md) for the connection to the Hungarian gloss
+work and the Hazel/Hazelnut sources.
