@@ -1,0 +1,36 @@
+SleepV HePron Present        he sleep·s[PRES·3SG]
+SleepV HePron Past           he ~slept[PAST]
+SleepV HePron PresentPerfect he has[PRES·PERF·3SG] ~slept[PTCP]
+SleepV IPron  Present        I sleep·∅[PRES]
+SleepV IPron  Past           I ~slept[PAST]
+SleepV IPron  PresentPerfect I have[PRES·PERF] ~slept[PTCP]
+WalkV  HePron Present        he walk·s[PRES·3SG]
+WalkV  HePron Past           he walk·ed[PAST]
+WalkV  HePron PresentPerfect he has[PRES·PERF·3SG] walk·ed[PTCP]
+WalkV  IPron  Present        I walk·∅[PRES]
+WalkV  IPron  Past           I walk·ed[PAST]
+WalkV  IPron  PresentPerfect I have[PRES·PERF] walk·ed[PTCP]
+RunV   HePron Present        he run·s[PRES·3SG]
+RunV   HePron Past           he ~ran[PAST]
+RunV   HePron PresentPerfect he has[PRES·PERF·3SG] run·∅[PTCP]
+RunV   IPron  Present        I run·∅[PRES]
+RunV   IPron  Past           I ~ran[PAST]
+RunV   IPron  PresentPerfect I have[PRES·PERF] run·∅[PTCP]
+SeeV2  HePron Present        he see·s[PRES·3SG] her
+SeeV2  HePron Past           he ~saw[PAST] her
+SeeV2  HePron PresentPerfect he has[PRES·PERF·3SG] see·n[PTCP] her
+SeeV2  IPron  Present        I see·∅[PRES] her
+SeeV2  IPron  Past           I ~saw[PAST] her
+SeeV2  IPron  PresentPerfect I have[PRES·PERF] see·n[PTCP] her
+LoveV2 HePron Present        he love·s[PRES·3SG] her
+LoveV2 HePron Past           he love·d[PAST] her
+LoveV2 HePron PresentPerfect he has[PRES·PERF·3SG] love·d[PTCP] her
+LoveV2 IPron  Present        I love·∅[PRES] her
+LoveV2 IPron  Past           I love·d[PAST] her
+LoveV2 IPron  PresentPerfect I have[PRES·PERF] love·d[PTCP] her
+ReadV2 HePron Present        he read·s[PRES·3SG] the[DEF] book
+ReadV2 HePron Past           he read·∅[PAST] the[DEF] book
+ReadV2 HePron PresentPerfect he has[PRES·PERF·3SG] read·∅[PTCP] the[DEF] book
+ReadV2 IPron  Present        I read·∅[PRES] the[DEF] book
+ReadV2 IPron  Past           I read·∅[PAST] the[DEF] book
+ReadV2 IPron  PresentPerfect I have[PRES·PERF] read·∅[PTCP] the[DEF] book

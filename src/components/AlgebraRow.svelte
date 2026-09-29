@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { profileOf } from '../lib/languages'
   import Word from './Word.svelte'
   import { phraseBoxes } from '../lib/boxes'
-  import { CATEGORY_COLORS, languageLabels, type LinearizationProjection, type Node, type NodeId } from '../lib/model'
+  import { CATEGORY_COLORS, type LinearizationProjection, type Node, type NodeId } from '../lib/model'
 
   let {
     projection, root, focus, linked = [], pinned = [], onFocus, onHover, onPin,
@@ -24,7 +25,7 @@
 
 <section class="algebra-row" class:partial={projection.source === 'partial'}>
   <div class="language">
-    <strong>{languageLabels[projection.language]}</strong>
+    <strong>{profileOf(projection.language).label}</strong>
     <span>{projection.source === 'gf' ? 'GF algebra' : 'typed preview'}</span>
   </div>
   <div class="grid" style:grid-template-columns={`repeat(${projection.segments.length}, max-content)`}>

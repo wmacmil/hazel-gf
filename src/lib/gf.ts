@@ -1,6 +1,7 @@
 import type { LanguageId, LinearizationProjection, Node } from './model'
 import { normalizeLinearizations, type RawLinearization } from './projection'
 import type { Paradigms } from './morphology'
+import { LANGUAGE_IDS } from './languages'
 import { linearizeInBrowser, loadBrowserGrammar, type BrowserGrammar } from './browser-gf'
 
 export interface GfRuntime {
@@ -9,7 +10,7 @@ export interface GfRuntime {
   linearize(term: string, root: Node, revision: number): Promise<LinearizationProjection[]>
 }
 
-const SUPPORTED = new Set<LanguageId>(['HazelGFEng', 'HazelGFGer', 'HazelGFSwe'])
+const SUPPORTED = new Set<LanguageId>(LANGUAGE_IDS)
 
 let paradigms: Promise<Paradigms> | undefined
 
@@ -25,7 +26,7 @@ function loadParadigms(): Promise<Paradigms> {
 
 async function project(raw: RawLinearization[], root: Node, revision: number): Promise<LinearizationProjection[]> {
   const filtered = raw.filter(item => SUPPORTED.has(item.to as LanguageId))
-  if (filtered.length !== 3) throw new Error('GF did not return all three concrete syntaxes')
+  if (filtered.length !== SUPPORTED.size) throw new Error(`GF returned ${filtered.length} of ${SUPPORTED.size} concrete syntaxes`)
   return normalizeLinearizations(filtered, root, revision, await loadParadigms())
 }
 

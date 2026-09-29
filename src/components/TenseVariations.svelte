@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { LANGUAGE_IDS, profileOf } from '../lib/languages'
   import type { GfRuntime } from '../lib/gf'
   import { producers } from '../lib/grammar'
   import { swapLeaf, toGfTerm } from '../lib/editor'
-  import { languageLabels, type ApplyNode, type ConstructorId, type LinearizationProjection, type NodeId } from '../lib/model'
+  import { type ApplyNode, type ConstructorId, type LinearizationProjection, type NodeId } from '../lib/model'
   import Word from './Word.svelte'
   import { allowedTenses } from '../lib/constraints'
 
@@ -52,11 +53,11 @@
     <p>The same tree with only its <b>Temp</b> leaf swapped. Click a tense to adopt it; click a morpheme to pin its feature — rows it rules out fade.</p>
   </div>
   {#if error}<p class="error">{error}</p>{/if}
-  <div class="grid" role="table" aria-label="Tense variations">
+  <div class="grid" role="table" aria-label="Tense variations" style:--languages={LANGUAGE_IDS.length}>
     <div class="row head" role="row">
       <span role="columnheader">tense</span>
       {#each rows[0]?.projections ?? [] as projection (projection.language)}
-        <span role="columnheader">{languageLabels[projection.language]}</span>
+        <span role="columnheader">{profileOf(projection.language).label}</span>
       {/each}
     </div>
     {#each rows as row (row.tense)}
@@ -81,7 +82,7 @@
   .heading p { max-width: 24rem; margin: 0; color: #6f675c; font-size: .78rem; }
   .grid { display: grid; gap: .2rem; overflow-x: auto; }
   .row {
-    display: grid; grid-template-columns: 8.5rem repeat(3, minmax(12rem, 1fr)); gap: .8rem; align-items: center;
+    display: grid; grid-template-columns: 8.5rem repeat(var(--languages), minmax(12rem, 1fr)); gap: .8rem; align-items: center;
     padding: .38rem .5rem; text-align: left; font: inherit; color: inherit; background: transparent;
     border: 1px solid transparent; border-radius: .45rem; cursor: pointer;
   }

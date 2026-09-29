@@ -5,6 +5,7 @@ import { fromGfTerm, toGfTerm } from './editor'
 import { constructorById } from './grammar'
 import { normalizeLinearizations, type RawLinearization } from './projection'
 import type { Paradigms } from './morphology'
+import { LANGUAGES } from './languages'
 import type { Morpheme, Node } from './model'
 
 const staticDir = resolve(__dirname, '../../oracle')
@@ -26,21 +27,24 @@ const show = (morpheme: Morpheme) => morpheme.role === 'zero'
   : `${morpheme.role === 'changed-stem' ? '~' : ''}${morpheme.text}${morpheme.features.length ? `[${morpheme.features.join('·')}]` : ''}`
 
 describe('morpheme sub-boxes from GF paradigm tables', () => {
-  it('segments every verb of the lexicon as reviewed (golden file)', async () => {
+  it('segments every verb of the lexicon as reviewed (one golden file per language)', async () => {
     const verbs: Record<string, () => Node> = {
       SleepV: () => apply('UseV', apply('SleepV')), WalkV: () => apply('UseV', apply('WalkV')), RunV: () => apply('UseV', apply('RunV')),
       SeeV2: () => apply('ComplV2', apply('SeeV2'), apply('UsePron', apply('ShePron'))),
       LoveV2: () => apply('ComplV2', apply('LoveV2'), apply('UsePron', apply('ShePron'))),
       ReadV2: () => apply('ComplV2', apply('ReadV2'), apply('DetCN', apply('Definite'), apply('UseN', apply('BookN')))),
     }
-    const lines: string[] = []
+    const lines = new Map(LANGUAGES.map(profile => [profile.id, [] as string[]]))
     for (const [name, vp] of Object.entries(verbs)) for (const subject of ['HePron', 'IPron']) for (const tense of ['Present', 'Past', 'PresentPerfect']) {
       const root = apply('MkS', apply(tense), apply('Positive'), apply('PredVP', apply('UsePron', apply(subject)), vp()))
-      const projections = normalizeLinearizations(read<Record<string, RawLinearization[]>>(`linearizations-${tense}.json`)[toGfTerm(root)], root, 1, paradigms)
-      lines.push(`${name.padEnd(7)}${subject.padEnd(7)}${tense.padEnd(15)}${projections.map(projection =>
-        projection.segments.map(segment => (segment.morphemes ?? []).map(show).join('·')).join(' ')).join('  |  ')}`)
+      for (const projection of normalizeLinearizations(read<Record<string, RawLinearization[]>>(`linearizations-${tense}.json`)[toGfTerm(root)], root, 1, paradigms)) {
+        lines.get(projection.language)!.push(`${name.padEnd(7)}${subject.padEnd(7)}${tense.padEnd(15)}${
+          projection.segments.map(segment => (segment.morphemes ?? []).map(show).join('·')).join(' ')}`)
+      }
     }
-    await expect(lines.join('\n') + '\n').toMatchFileSnapshot('./__golden__/morphology.txt')
+    for (const profile of LANGUAGES) {
+      await expect(lines.get(profile.id)!.join('\n') + '\n').toMatchFileSnapshot(`./__golden__/morphology.${profile.code}.txt`)
+    }
   })
 
   it('forgets back to the surface and cites GF paradigms, for every precomputed sentence', () => {

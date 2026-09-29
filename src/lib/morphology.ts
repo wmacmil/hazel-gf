@@ -1,4 +1,5 @@
 import type { LanguageId, Morpheme, NodeId } from './model'
+import { profileOf } from './languages'
 
 /** GF `l -table` output per language and lexical leaf: parameter cell → form. */
 export type Paradigms = Record<LanguageId, Record<string, Record<string, string>>>
@@ -12,18 +13,6 @@ export const FEATURE_AXES: Record<string, FeatureAxis> = {
   '3SG': 'agreement',
   NEG: 'polarity',
   DEF: 'definiteness', INDEF: 'definiteness',
-}
-
-const CITATION: Record<LanguageId, { verb: string; noun: string; infinitive: RegExp }> = {
-  HazelGFEng: { verb: 'VInf', noun: 'Sg Nom', infinitive: /$^/ },
-  HazelGFGer: { verb: '(VInf False)', noun: 'Sg Nom', infinitive: /e?n$/ },
-  HazelGFSwe: { verb: '(VI (VInfin Act))', noun: 'Sg Indef Nom', infinitive: /a$/ },
-}
-
-/** German finite rows, by the tense the finite verb carries. */
-const GERMAN_ROW: Record<string, string> = { PRES: 'VPresInd', PAST: 'VImpfInd' }
-const GERMAN_PERSONAL_ENDINGS: Record<string, string> = {
-  'Sg P1': 'e', 'Sg P2': 'st', 'Sg P3': 't', 'Pl P1': 'en', 'Pl P2': 't', 'Pl P3': 'en',
 }
 
 export type WordContext = {
@@ -48,15 +37,18 @@ function stemOf(context: WordContext, paradigms: Paradigms): string | undefined 
   const { language, lexeme } = context
   const table = lexeme && paradigms[language]?.[lexeme.constructor]
   if (!table) return undefined
+  const profile = profileOf(language)
   const isVerb = lexeme.category === 'V' || lexeme.category === 'V2'
-  const citation = table[isVerb ? CITATION[language].verb : CITATION[language].noun]
+  const citation = table[isVerb ? profile.citation.verb : profile.citation.noun]
   if (!citation) return undefined
-  return isVerb ? citation.replace(CITATION[language].infinitive, '') : citation
+  return isVerb && profile.infinitiveEnding ? citation.replace(new RegExp(profile.infinitiveEnding), '') : citation
 }
 
 /** Split an inflected word into stem + exponents and give each piece its features and provenance. */
 export function segmentWord(context: WordContext, paradigms: Paradigms): Morpheme[] {
   const { language, lexeme, text, features, controllers, realizedBy } = context
+  const profile = profileOf(language)
+  const zeroAgreement = profile.agreement.realization === 'zero'
   const axis = (feature: string) => FEATURE_AXES[feature]
   const provenance = (pieceFeatures: string[]) => [...new Set([
     ...(lexeme ? [lexeme.id] : realizedBy),
@@ -72,34 +64,38 @@ export function segmentWord(context: WordContext, paradigms: Paradigms): Morphem
   const aspect = features.filter(feature => axis(feature) === 'aspect')
 
   // Function words (auxiliaries, determiners, pronouns, negation) are one piece;
-  // Swedish shows its absent agreement as ∅ inside the finite word.
+  // a language with zero agreement (Swedish) shows it as ∅ inside the finite word.
   const stem = stemOf(context, paradigms)
   if (!lexeme || !stem) {
-    const overt = features.filter(feature => !(language === 'HazelGFSwe' && axis(feature) === 'agreement'))
+    const overt = features.filter(feature => !(zeroAgreement && axis(feature) === 'agreement'))
     return withZero([{ ...piece(text, 'function', overt), realizedBy: provenance(overt).concat(realizedBy).filter((id, i, all) => all.indexOf(id) === i) }],
-      language === 'HazelGFSwe' ? agreement : [])
+      zeroAgreement ? agreement : [])
   }
   if (!features.length) return [piece(text, 'stem')]
 
-  // German participle circumfix: ge·STEM·en / ge·STEM·t, both halves PTCP.
-  if (language === 'HazelGFGer' && aspect.includes('PTCP') && /^ge.+(en|t)$/.test(text)) {
-    const suffix = text.endsWith('en') ? 'en' : 't'
-    const middle = text.slice(2, -suffix.length)
-    return [piece('ge', 'affix', aspect), piece(middle, middle === stem ? 'stem' : 'changed-stem'), piece(suffix, 'affix', aspect)]
+  // Participle circumfix (German ge·STEM·en / ge·STEM·t): both halves carry the feature.
+  const circumfix = profile.circumfix
+  const suffix = circumfix?.suffixes.find(ending => text.endsWith(ending))
+  if (circumfix && suffix && aspect.includes(circumfix.feature) && text.startsWith(circumfix.prefix)
+    && text.length > circumfix.prefix.length + suffix.length) {
+    const middle = text.slice(circumfix.prefix.length, -suffix.length)
+    return [piece(circumfix.prefix, 'affix', aspect), piece(middle, middle === stem ? 'stem' : 'changed-stem'), piece(suffix, 'affix', aspect)]
   }
 
-  // German finite verbs: the personal ending is read off the verb's own paradigm cell.
+  // Personal endings (German): read off the verb's own paradigm cell.
   let core = text
   let personal = ''
-  if (language === 'HazelGFGer' && tense.length) {
+  const personalEndings = profile.personalEndings
+  const rowPrefix = personalEndings && tense.length ? personalEndings.rows[tense[0]] : undefined
+  if (personalEndings && rowPrefix) {
     const table = paradigms[language][lexeme.constructor]
-    const row = Object.entries(table).filter(([cell]) => cell.startsWith(`(VFin False (${GERMAN_ROW[tense[0]]} `))
+    const row = Object.entries(table).filter(([cell]) => cell.startsWith(rowPrefix))
     const rowStem = commonPrefix(row.map(([, form]) => form))
     // Syncretic cells (liest = 2SG = 3SG) are resolved by the subject's agreement.
     const cells = row.filter(([, form]) => form === text).map(([name]) => name)
     const cell = (cells.find(name => agreement.includes('3SG') && name.includes('Sg P3')) ?? cells[0])?.match(/(Sg|Pl) (P[123])/)
     if (rowStem.length >= Math.min(stem.length, text.length) && text.startsWith(rowStem)) personal = text.slice(rowStem.length)
-    else if (cell) personal = GERMAN_PERSONAL_ENDINGS[`${cell[1]} ${cell[2]}`] ?? ''
+    else if (cell) personal = personalEndings.endings[`${cell[1]} ${cell[2]}`] ?? ''
     if (!text.endsWith(personal) || personal === text) personal = ''
     core = text.slice(0, text.length - personal.length)
   }
@@ -111,9 +107,9 @@ export function segmentWord(context: WordContext, paradigms: Paradigms): Morphem
     pieces.push(piece(stem, 'stem'))
     const marker = core.slice(stem.length)
     if (marker) {
-      // A tense marker (lieb·te, walk·ed, sov·er). Where no separate personal
-      // ending exists, English fuses agreement into it (sleep·s = PRES·3SG).
-      const fused = language === 'HazelGFEng' ? agreement : []
+      // A tense marker (lieb·te, walk·ed, sov·er). A fused-suffix language
+      // puts agreement into it too (English sleep·s = PRES·3SG).
+      const fused = profile.agreement.realization === 'fused-suffix' ? agreement : []
       pieces.push(piece(marker, 'affix', [...inflection, ...fused, ...features.filter(f => axis(f) === 'definiteness')]))
       marked = true
     }
@@ -125,10 +121,13 @@ export function segmentWord(context: WordContext, paradigms: Paradigms): Morphem
     marked = carriesTense
   }
 
-  if (language === 'HazelGFGer') {
-    if (personal) return [...pieces, piece(personal, 'affix', marked ? agreement : [...inflection, ...agreement])]
-    return withZero(marked ? pieces : withZero(pieces, inflection), agreement)
+  switch (profile.agreement.realization) {
+    case 'personal-ending':
+      if (personal) return [...pieces, piece(personal, 'affix', marked ? agreement : [...inflection, ...agreement])]
+      return withZero(marked ? pieces : withZero(pieces, inflection), agreement)
+    case 'fused-suffix':
+      return marked ? pieces : withZero(pieces, [...inflection, ...agreement])
+    case 'zero':
+      return withZero(marked ? pieces : withZero(pieces, inflection), agreement)
   }
-  if (language === 'HazelGFEng') return marked ? pieces : withZero(pieces, [...inflection, ...agreement])
-  return withZero(marked ? pieces : withZero(pieces, inflection), agreement)
 }

@@ -12,7 +12,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke:gf": "./scripts/smoke-gf.sh",
+    "smoke:gf": "node scripts/smoke-gf.mjs",
     "verify": "npm run build && npm run check && npm test && npm run smoke:gf",
     "build:static": "VITE_GF_MODE=browser vite build",
     "preview:static": "npm run build:static && vite preview --port 8044",

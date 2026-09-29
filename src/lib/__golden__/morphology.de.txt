@@ -1,0 +1,36 @@
+SleepV HePron Present        er ~schläf·t[PRES·3SG]
+SleepV HePron Past           er ~schlief[PAST]·∅[3SG]
+SleepV HePron PresentPerfect er hat[PRES·PERF·3SG] ge[PTCP]·schlaf·en[PTCP]
+SleepV IPron  Present        ich schlaf·e[PRES]
+SleepV IPron  Past           ich ~schlief[PAST]
+SleepV IPron  PresentPerfect ich habe[PRES·PERF] ge[PTCP]·schlaf·en[PTCP]
+WalkV  HePron Present        er geh·t[PRES·3SG]
+WalkV  HePron Past           er ~ging[PAST]·∅[3SG]
+WalkV  HePron PresentPerfect er ist[PRES·PERF·3SG] ge[PTCP]·~gang·en[PTCP]
+WalkV  IPron  Present        ich geh·e[PRES]
+WalkV  IPron  Past           ich ~ging[PAST]
+WalkV  IPron  PresentPerfect ich bin[PRES·PERF] ge[PTCP]·~gang·en[PTCP]
+RunV   HePron Present        er ~läuf·t[PRES·3SG]
+RunV   HePron Past           er ~lief[PAST]·∅[3SG]
+RunV   HePron PresentPerfect er ist[PRES·PERF·3SG] ge[PTCP]·lauf·en[PTCP]
+RunV   IPron  Present        ich lauf·e[PRES]
+RunV   IPron  Past           ich ~lief[PAST]
+RunV   IPron  PresentPerfect ich bin[PRES·PERF] ge[PTCP]·lauf·en[PTCP]
+SeeV2  HePron Present        er ~sieh·t[PRES·3SG] sie
+SeeV2  HePron Past           er ~sah[PAST]·∅[3SG] sie
+SeeV2  HePron PresentPerfect er hat[PRES·PERF·3SG] sie ge[PTCP]·seh·en[PTCP]
+SeeV2  IPron  Present        ich seh·e[PRES] sie
+SeeV2  IPron  Past           ich ~sah[PAST] sie
+SeeV2  IPron  PresentPerfect ich habe[PRES·PERF] sie ge[PTCP]·seh·en[PTCP]
+LoveV2 HePron Present        er lieb·t[PRES·3SG] sie
+LoveV2 HePron Past           er lieb·te[PAST]·∅[3SG] sie
+LoveV2 HePron PresentPerfect er hat[PRES·PERF·3SG] sie ge[PTCP]·lieb·t[PTCP]
+LoveV2 IPron  Present        ich lieb·e[PRES] sie
+LoveV2 IPron  Past           ich lieb·te[PAST] sie
+LoveV2 IPron  PresentPerfect ich habe[PRES·PERF] sie ge[PTCP]·lieb·t[PTCP]
+ReadV2 HePron Present        er ~lies·t[PRES·3SG] das[DEF] Buch
+ReadV2 HePron Past           er ~las[PAST]·∅[3SG] das[DEF] Buch
+ReadV2 HePron PresentPerfect er hat[PRES·PERF·3SG] das[DEF] Buch ge[PTCP]·les·en[PTCP]
+ReadV2 IPron  Present        ich les·e[PRES] das[DEF] Buch
+ReadV2 IPron  Past           ich ~las[PAST] das[DEF] Buch
+ReadV2 IPron  PresentPerfect ich habe[PRES·PERF] das[DEF] Buch ge[PTCP]·les·en[PTCP]

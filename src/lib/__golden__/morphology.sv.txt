@@ -1,0 +1,36 @@
+SleepV HePron Present        han sov·er[PRES]·∅[3SG]
+SleepV HePron Past           han sov·∅[PAST]·∅[3SG]
+SleepV HePron PresentPerfect han har[PRES·PERF]·∅[3SG] sov·it[PTCP]
+SleepV IPron  Present        jag sov·er[PRES]
+SleepV IPron  Past           jag sov·∅[PAST]
+SleepV IPron  PresentPerfect jag har[PRES·PERF] sov·it[PTCP]
+WalkV  HePron Present        han gå·r[PRES]·∅[3SG]
+WalkV  HePron Past           han ~gick[PAST]·∅[3SG]
+WalkV  HePron PresentPerfect han har[PRES·PERF]·∅[3SG] gå·tt[PTCP]
+WalkV  IPron  Present        jag gå·r[PRES]
+WalkV  IPron  Past           jag ~gick[PAST]
+WalkV  IPron  PresentPerfect jag har[PRES·PERF] gå·tt[PTCP]
+RunV   HePron Present        han spring·er[PRES]·∅[3SG]
+RunV   HePron Past           han ~sprang[PAST]·∅[3SG]
+RunV   HePron PresentPerfect han har[PRES·PERF]·∅[3SG] ~sprungit[PTCP]
+RunV   IPron  Present        jag spring·er[PRES]
+RunV   IPron  Past           jag ~sprang[PAST]
+RunV   IPron  PresentPerfect jag har[PRES·PERF] ~sprungit[PTCP]
+SeeV2  HePron Present        han se·r[PRES]·∅[3SG] henne
+SeeV2  HePron Past           han ~såg[PAST]·∅[3SG] henne
+SeeV2  HePron PresentPerfect han har[PRES·PERF]·∅[3SG] se·tt[PTCP] henne
+SeeV2  IPron  Present        jag se·r[PRES] henne
+SeeV2  IPron  Past           jag ~såg[PAST] henne
+SeeV2  IPron  PresentPerfect jag har[PRES·PERF] se·tt[PTCP] henne
+LoveV2 HePron Present        han älsk·ar[PRES]·∅[3SG] henne
+LoveV2 HePron Past           han älsk·ade[PAST]·∅[3SG] henne
+LoveV2 HePron PresentPerfect han har[PRES·PERF]·∅[3SG] älsk·at[PTCP] henne
+LoveV2 IPron  Present        jag älsk·ar[PRES] henne
+LoveV2 IPron  Past           jag älsk·ade[PAST] henne
+LoveV2 IPron  PresentPerfect jag har[PRES·PERF] älsk·at[PTCP] henne
+ReadV2 HePron Present        han läs·er[PRES]·∅[3SG] bok·en[DEF]
+ReadV2 HePron Past           han läs·te[PAST]·∅[3SG] bok·en[DEF]
+ReadV2 HePron PresentPerfect han har[PRES·PERF]·∅[3SG] läs·t[PTCP] bok·en[DEF]
+ReadV2 IPron  Present        jag läs·er[PRES] bok·en[DEF]
+ReadV2 IPron  Past           jag läs·te[PAST] bok·en[DEF]
+ReadV2 IPron  PresentPerfect jag har[PRES·PERF] läs·t[PTCP] bok·en[DEF]

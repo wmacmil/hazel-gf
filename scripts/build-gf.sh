@@ -11,6 +11,9 @@ if [ ! -f "$rgl_dist/SyntaxEng.gfo" ]; then
   exit 1
 fi
 
+# Every concrete syntax declared in languages.json.
+concretes=$(node -e 'const l = require(process.argv[1]); console.log(l.map(p => process.argv[2] + "/grammar/" + p.id + ".gf").join(" "))' "$app_dir/languages.json" "$app_dir")
+
 mkdir -p "$app_dir/build/gfo" "$app_dir/public"
 
 # --output-format=json writes both HazelGF.pgf (GF server) and HazelGF.json
@@ -19,6 +22,4 @@ gf --make --jobs=1 --output-format=json \
   --path="$app_dir/grammar:$rgl_dist" \
   --gfo-dir="$app_dir/build/gfo" \
   --output-dir="$app_dir/public" \
-  "$app_dir/grammar/HazelGFEng.gf" \
-  "$app_dir/grammar/HazelGFGer.gf" \
-  "$app_dir/grammar/HazelGFSwe.gf"
+  $concretes

@@ -1,4 +1,4 @@
-import type { CategoryId, Constructor, ConstructorId, LanguageId } from './model'
+import type { CategoryId, Constructor, ConstructorId } from './model'
 
 const c = (id: ConstructorId, label: string, inputs: CategoryId[], output: CategoryId): Constructor =>
   ({ id, label, inputs, output })
@@ -40,26 +40,4 @@ export function wrappers(category: CategoryId): { constructor: Constructor; inpu
 
 export function profile(constructor: Constructor): string {
   return `(${constructor.inputs.join(', ')}) → ${constructor.output}`
-}
-
-type Lexicon = Record<string, string>
-export const partialLexicon: Record<LanguageId, Lexicon> = {
-  HazelGFEng: {
-    Positive: '', Negative: 'not', Definite: 'the', Indefinite: 'a', IPron: 'I', YouPron: 'you',
-    HePron: 'he', ShePron: 'she', WePron: 'we', TheyPron: 'they', ManN: 'man', WomanN: 'woman',
-    HouseN: 'house', DogN: 'dog', CatN: 'cat', BookN: 'book', SleepV: 'sleep', WalkV: 'walk',
-    RunV: 'run', SeeV2: 'see', LoveV2: 'love', ReadV2: 'read',
-  },
-  HazelGFGer: {
-    Positive: '', Negative: 'nicht', Definite: 'der/die/das', Indefinite: 'ein/eine', IPron: 'ich',
-    YouPron: 'du', HePron: 'er', ShePron: 'sie', WePron: 'wir', TheyPron: 'sie', ManN: 'Mann',
-    WomanN: 'Frau', HouseN: 'Haus', DogN: 'Hund', CatN: 'Katze', BookN: 'Buch', SleepV: 'schlafen',
-    WalkV: 'gehen', RunV: 'laufen', SeeV2: 'sehen', LoveV2: 'lieben', ReadV2: 'lesen',
-  },
-  HazelGFSwe: {
-    Positive: '', Negative: 'inte', Definite: 'DEF', Indefinite: 'en/ett', IPron: 'jag', YouPron: 'du',
-    HePron: 'han', ShePron: 'hon', WePron: 'vi', TheyPron: 'de', ManN: 'man', WomanN: 'kvinna',
-    HouseN: 'hus', DogN: 'hund', CatN: 'katt', BookN: 'bok', SleepV: 'sova', WalkV: 'gå',
-    RunV: 'springa', SeeV2: 'se', LoveV2: 'älska', ReadV2: 'läsa',
-  },
 }

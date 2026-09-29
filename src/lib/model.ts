@@ -29,7 +29,8 @@ export type EditorDocument = {
   focus: NodeId
 }
 
-export type LanguageId = 'HazelGFEng' | 'HazelGFGer' | 'HazelGFSwe'
+/** A GF concrete syntax id declared in languages.json (e.g. HazelGFGer). */
+export type LanguageId = string
 
 /** A piece of a word: stem, (changed) stem, affix, function word, or an empty exponent ∅. */
 export type Morpheme = {
@@ -80,8 +81,3 @@ export const CATEGORY_COLORS: Record<CategoryId, { ink: string; glow: string; wa
   Pol: { ink: '#672395', glow: '#c884f5', wash: '#f2e7f9' }, // 276°
 }
 
-export const languageLabels: Record<LanguageId, string> = {
-  HazelGFEng: 'English',
-  HazelGFGer: 'Deutsch',
-  HazelGFSwe: 'Svenska',
-}

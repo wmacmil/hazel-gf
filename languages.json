@@ -1,0 +1,175 @@
+[
+  {
+    "id": "HazelGFEng",
+    "code": "en",
+    "label": "English",
+    "citation": {
+      "verb": "VInf",
+      "noun": "Sg Nom"
+    },
+    "infinitiveEnding": "",
+    "negation": "^(not|\\w+n't)$",
+    "fusedNegation": "\\w+n't$",
+    "agreement": {
+      "realization": "fused-suffix",
+      "markedIn": [
+        "PRES"
+      ]
+    },
+    "partialLexicon": {
+      "Positive": "",
+      "Negative": "not",
+      "Definite": "the",
+      "Indefinite": "a",
+      "IPron": "I",
+      "YouPron": "you",
+      "HePron": "he",
+      "ShePron": "she",
+      "WePron": "we",
+      "TheyPron": "they",
+      "ManN": "man",
+      "WomanN": "woman",
+      "HouseN": "house",
+      "DogN": "dog",
+      "CatN": "cat",
+      "BookN": "book",
+      "SleepV": "sleep",
+      "WalkV": "walk",
+      "RunV": "run",
+      "SeeV2": "see",
+      "LoveV2": "love",
+      "ReadV2": "read"
+    },
+    "smoke": [
+      {
+        "term": "MkS Present Positive (PredVP (UsePron IPron) (ComplV2 SeeV2 (DetCN Definite (UseN WomanN))))",
+        "text": "I see the woman"
+      },
+      {
+        "term": "MkS PastPerfect Negative (PredVP (DetCN Definite (UseN ManN)) (UseV SleepV))",
+        "text": "the man hadn't slept"
+      }
+    ]
+  },
+  {
+    "id": "HazelGFGer",
+    "code": "de",
+    "label": "Deutsch",
+    "citation": {
+      "verb": "(VInf False)",
+      "noun": "Sg Nom"
+    },
+    "infinitiveEnding": "e?n$",
+    "negation": "^nicht$",
+    "agreement": {
+      "realization": "personal-ending",
+      "markedIn": "all"
+    },
+    "personalEndings": {
+      "rows": {
+        "PRES": "(VFin False (VPresInd ",
+        "PAST": "(VFin False (VImpfInd "
+      },
+      "endings": {
+        "Sg P1": "e",
+        "Sg P2": "st",
+        "Sg P3": "t",
+        "Pl P1": "en",
+        "Pl P2": "t",
+        "Pl P3": "en"
+      }
+    },
+    "circumfix": {
+      "feature": "PTCP",
+      "prefix": "ge",
+      "suffixes": [
+        "en",
+        "t"
+      ]
+    },
+    "partialLexicon": {
+      "Positive": "",
+      "Negative": "nicht",
+      "Definite": "der/die/das",
+      "Indefinite": "ein/eine",
+      "IPron": "ich",
+      "YouPron": "du",
+      "HePron": "er",
+      "ShePron": "sie",
+      "WePron": "wir",
+      "TheyPron": "sie",
+      "ManN": "Mann",
+      "WomanN": "Frau",
+      "HouseN": "Haus",
+      "DogN": "Hund",
+      "CatN": "Katze",
+      "BookN": "Buch",
+      "SleepV": "schlafen",
+      "WalkV": "gehen",
+      "RunV": "laufen",
+      "SeeV2": "sehen",
+      "LoveV2": "lieben",
+      "ReadV2": "lesen"
+    },
+    "smoke": [
+      {
+        "term": "MkS Present Positive (PredVP (UsePron IPron) (ComplV2 SeeV2 (DetCN Definite (UseN WomanN))))",
+        "text": "ich sehe die Frau"
+      },
+      {
+        "term": "MkS PastPerfect Negative (PredVP (DetCN Definite (UseN ManN)) (UseV SleepV))",
+        "text": "der Mann hatte nicht geschlafen"
+      }
+    ]
+  },
+  {
+    "id": "HazelGFSwe",
+    "code": "sv",
+    "label": "Svenska",
+    "citation": {
+      "verb": "(VI (VInfin Act))",
+      "noun": "Sg Indef Nom"
+    },
+    "infinitiveEnding": "a$",
+    "negation": "^inte$",
+    "agreement": {
+      "realization": "zero",
+      "markedIn": "all"
+    },
+    "suffixedDefiniteness": true,
+    "partialLexicon": {
+      "Positive": "",
+      "Negative": "inte",
+      "Definite": "DEF",
+      "Indefinite": "en/ett",
+      "IPron": "jag",
+      "YouPron": "du",
+      "HePron": "han",
+      "ShePron": "hon",
+      "WePron": "vi",
+      "TheyPron": "de",
+      "ManN": "man",
+      "WomanN": "kvinna",
+      "HouseN": "hus",
+      "DogN": "hund",
+      "CatN": "katt",
+      "BookN": "bok",
+      "SleepV": "sova",
+      "WalkV": "gå",
+      "RunV": "springa",
+      "SeeV2": "se",
+      "LoveV2": "älska",
+      "ReadV2": "läsa"
+    },
+    "smoke": [
+      {
+        "term": "MkS Present Positive (PredVP (UsePron IPron) (ComplV2 SeeV2 (DetCN Definite (UseN WomanN))))",
+        "text": "jag ser kvinnan"
+      },
+      {
+        "term": "MkS PastPerfect Negative (PredVP (DetCN Definite (UseN ManN)) (UseV SleepV))",
+        "text": "mannen hade inte sovit"
+      }
+    ]
+  }
+]

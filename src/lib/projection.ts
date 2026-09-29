@@ -1,4 +1,4 @@
-import { partialLexicon } from './grammar'
+import { LANGUAGE_IDS, marksAgreement, profileOf } from './languages'
 import { outputOf, preorder } from './editor'
 import { segmentWord, type Paradigms } from './morphology'
 import type {
@@ -17,7 +17,6 @@ export type RawBracket = RawToken | {
 }
 export type RawLinearization = { to: string; text: string; brackets: RawBracket[] }
 
-const LANGUAGES: LanguageId[] = ['HazelGFEng', 'HazelGFGer', 'HazelGFSwe']
 const isToken = (value: RawBracket): value is RawToken => 'token' in value
 
 type LeafGroup = { fun: string; category: string; node?: NodeId; tokens: string[] }
@@ -64,12 +63,12 @@ function findApply(node: Node, constructor: string): ApplyNode[] {
   return preorder(node).filter((item): item is ApplyNode => item.kind === 'apply' && item.constructor === constructor)
 }
 
-const NEGATION: Record<LanguageId, RegExp> = {
-  HazelGFEng: /^(not|\w+n't)$/i, HazelGFGer: /^nicht$/i, HazelGFSwe: /^inte$/i,
+const isNegationWord = (language: LanguageId, text: string) => new RegExp(profileOf(language).negation, 'i').test(text)
+/** Negation that is its own word (nicht, inte, not), as opposed to fused into an auxiliary (doesn't). */
+const isBareNegation = (language: LanguageId, text: string) => {
+  const fused = profileOf(language).fusedNegation
+  return isNegationWord(language, text) && !(fused && new RegExp(fused, 'i').test(text))
 }
-const isNegationWord = (language: LanguageId, text: string) => NEGATION[language].test(text)
-const isBareNegation = (language: LanguageId, text: string) =>
-  isNegationWord(language, text) && !/\w+n't$/i.test(text)
 
 /** Tense label carried by the finite element, and whether the tense is anterior (perfect). */
 export const TENSES: Record<string, { label: string; perfect: boolean }> = {
@@ -120,8 +119,8 @@ function annotateVerbGroup(language: LanguageId, root: Node, segments: Linearize
 
   const subjectHead = preorder(subject).find(node => node.kind === 'apply' && THIRD_SINGULAR.includes(node.constructor))
   if (!subjectHead) return
-  // Swedish never marks agreement; morphology renders its 3SG as ∅ inside the finite word.
-  if (language !== 'HazelGFEng' || !tense || tense.label === 'PRES') finite.featureValues.push('3SG')
+  // A zero-agreement language (Swedish) still records 3SG; morphology renders it as ∅.
+  if (marksAgreement(profileOf(language), tense?.label)) finite.featureValues.push('3SG')
 }
 
 function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms?: Paradigms): LinearizedSegment[] {
@@ -145,7 +144,7 @@ function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[
     }
   }
 
-  if (language === 'HazelGFSwe') {
+  if (profileOf(language).suffixedDefiniteness) {
     // Suffixed definiteness (kvinna·n): the noun word also realizes the Det node.
     for (const detCn of findApply(root, 'DetCN')) {
       const [det, cn] = detCn.children
@@ -237,7 +236,7 @@ function partialSegments(node: Node, language: LanguageId, serial: { value: numb
     }]
   }
   if (!node.children.length) {
-    const text = partialLexicon[language][node.constructor]
+    const text = profileOf(language).partialLexicon[node.constructor]
     if (!text) return []
     return [{
       id: `${language}-partial-${serial.value++}`, text, role: 'overt',
@@ -248,7 +247,7 @@ function partialSegments(node: Node, language: LanguageId, serial: { value: numb
 }
 
 export function partialProjections(root: Node, revision: number): LinearizationProjection[] {
-  return LANGUAGES.map(language => {
+  return LANGUAGE_IDS.map(language => {
     const segments = partialSegments(root, language, { value: 0 })
     return {
       language,

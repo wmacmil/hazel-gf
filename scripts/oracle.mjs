@@ -6,7 +6,7 @@
 // public/static/paradigms.json: GF's `l -table` for every lexical leaf, shipped
 // and used to split words into morphemes.
 import { spawn, execFileSync } from 'node:child_process'
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -15,7 +15,7 @@ const pgf = resolve(appDir, 'public/HazelGF.pgf')
 const outDir = resolve(appDir, 'oracle')
 const staticDir = resolve(appDir, 'public/static')
 const port = process.env.GF_PRECOMPUTE_PORT ?? '41399'
-const languages = new Set(['HazelGFEng', 'HazelGFGer', 'HazelGFSwe'])
+const languages = new Set(JSON.parse(readFileSync(resolve(appDir, 'languages.json'), 'utf8')).map(profile => profile.id))
 
 const generated = execFileSync('gf', ['--run', pgf], {
   input: 'gt -cat=S -depth=8 -number=1000000\nq\n',
