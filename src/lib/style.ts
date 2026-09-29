@@ -2,14 +2,15 @@ import { FEATURE_AXES, type FeatureAxis } from './morphology'
 
 /**
  * Algebra colors: one hue per feature axis, all in the warm half of the wheel
- * (328°–56°), disjoint from the operad's sort hues in model.ts.
+ * (312°–56°), disjoint from the operad's sort hues in model.ts.
  */
 export const FEATURE_COLORS: Record<FeatureAxis, { ink: string; wash: string }> = {
+  agreement: { ink: '#b61696', wash: '#fccff3' }, // 312°
+  polarity: { ink: '#b6164b', wash: '#fccfde' }, // 340°
+  case: { ink: '#b62616', wash: '#fcd3cf' }, // 6°
   tense: { ink: '#b65616', wash: '#fce1cf' }, // 24°
   aspect: { ink: '#a1700d', wash: '#fcefcf' }, // 42°
   definiteness: { ink: '#8e850b', wash: '#fcf9cf' }, // 56°
-  polarity: { ink: '#b61621', wash: '#fccfd2' }, // 356°
-  agreement: { ink: '#b6166b', wash: '#fccfe7' }, // 328°
 }
 
 /** A morpheme's color is a pure function of its fiber: one axis → pure, several → blend, none → ink. */

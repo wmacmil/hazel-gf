@@ -1,0 +1,50 @@
+InPrep    Present        I sleep·∅[PRES] in the[DEF] table
+InPrep    Present        I sleep·∅[PRES] in the[DEF] city
+InPrep    Present        I sleep·∅[PRES] in a[INDEF] garden
+InPrep    Present        I sleep·∅[PRES] in him[ACC]
+InPrep    Present        I sleep·∅[PRES] in them[ACC]
+OnPrep    Present        I sleep·∅[PRES] on the[DEF] table
+OnPrep    Present        I sleep·∅[PRES] on the[DEF] city
+OnPrep    Present        I sleep·∅[PRES] on a[INDEF] garden
+OnPrep    Present        I sleep·∅[PRES] on him[ACC]
+OnPrep    Present        I sleep·∅[PRES] on them[ACC]
+WithPrep  Present        I sleep·∅[PRES] with the[DEF] table
+WithPrep  Present        I sleep·∅[PRES] with the[DEF] city
+WithPrep  Present        I sleep·∅[PRES] with a[INDEF] garden
+WithPrep  Present        I sleep·∅[PRES] with him[ACC]
+WithPrep  Present        I sleep·∅[PRES] with them[ACC]
+ToPrep    Present        I sleep·∅[PRES] to the[DEF] table
+ToPrep    Present        I sleep·∅[PRES] to the[DEF] city
+ToPrep    Present        I sleep·∅[PRES] to a[INDEF] garden
+ToPrep    Present        I sleep·∅[PRES] to him[ACC]
+ToPrep    Present        I sleep·∅[PRES] to them[ACC]
+UnderPrep Present        I sleep·∅[PRES] under the[DEF] table
+UnderPrep Present        I sleep·∅[PRES] under the[DEF] city
+UnderPrep Present        I sleep·∅[PRES] under a[INDEF] garden
+UnderPrep Present        I sleep·∅[PRES] under him[ACC]
+UnderPrep Present        I sleep·∅[PRES] under them[ACC]
+InPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] in the[DEF] table
+InPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] in the[DEF] city
+InPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] in a[INDEF] garden
+InPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] in him[ACC]
+InPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] in them[ACC]
+OnPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] on the[DEF] table
+OnPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] on the[DEF] city
+OnPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] on a[INDEF] garden
+OnPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] on him[ACC]
+OnPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] on them[ACC]
+WithPrep  PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] with the[DEF] table
+WithPrep  PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] with the[DEF] city
+WithPrep  PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] with a[INDEF] garden
+WithPrep  PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] with him[ACC]
+WithPrep  PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] with them[ACC]
+ToPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] to the[DEF] table
+ToPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] to the[DEF] city
+ToPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] to a[INDEF] garden
+ToPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] to him[ACC]
+ToPrep    PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] to them[ACC]
+UnderPrep PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] under the[DEF] table
+UnderPrep PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] under the[DEF] city
+UnderPrep PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] under a[INDEF] garden
+UnderPrep PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] under him[ACC]
+UnderPrep PresentPerfect the[DEF] man has[PRES·PERF·3SG] walk·ed[PTCP] under them[ACC]

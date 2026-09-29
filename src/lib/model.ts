@@ -1,4 +1,4 @@
-export const CATEGORIES = ['S', 'Cl', 'NP', 'VP', 'CN', 'N', 'V', 'V2', 'Det', 'Pron', 'Pol', 'Temp'] as const
+export const CATEGORIES = ['S', 'Cl', 'NP', 'VP', 'CN', 'N', 'V', 'V2', 'Det', 'Pron', 'Pol', 'Temp', 'Adv', 'Prep'] as const
 export type CategoryId = (typeof CATEGORIES)[number]
 export type NodeId = string
 export type ConstructorId = string
@@ -62,22 +62,24 @@ export type LinearizationProjection = {
 
 /**
  * Operad colors: one hue per sort (GF category), all in the cool half of the
- * wheel (120°–276°). `glow` is for the dark operad panel, `ink`/`wash` for the
+ * wheel (112°–288°). `glow` is for the dark operad panel, `ink`/`wash` for the
  * sort's hairline image on the algebra's paper. Feature colors live in the
  * warm half (style.ts), so the two channels can never be confused.
  */
 export const CATEGORY_COLORS: Record<CategoryId, { ink: string; glow: string; wash: string }> = {
-  V2: { ink: '#239523', glow: '#84f584', wash: '#e7f9e7' }, // 120°
-  V: { ink: '#23953d', glow: '#84f59f', wash: '#e7f9eb' }, // 134°
-  VP: { ink: '#239558', glow: '#84f5b9', wash: '#e7f9ef' }, // 148°
+  V2: { ink: '#329523', glow: '#93f584', wash: '#e9f9e7' }, // 112°
+  V: { ink: '#23952e', glow: '#84f590', wash: '#e7f9e8' }, // 126°
+  VP: { ink: '#239547', glow: '#84f5a8', wash: '#e7f9ec' }, // 139°
+  Adv: { ink: '#239561', glow: '#84f5c2', wash: '#e7f9f1' }, // 153°
   Det: { ink: '#23957a', glow: '#84f5db', wash: '#e7f9f5' }, // 166°
-  NP: { ink: '#239195', glow: '#84f1f5', wash: '#e7f8f9' }, // 182°
-  CN: { ink: '#237495', glow: '#84d5f5', wash: '#e7f4f9' }, // 197°
-  N: { ink: '#235895', glow: '#84b9f5', wash: '#e7eff9' }, // 212°
-  Pron: { ink: '#233d95', glow: '#849ff5', wash: '#e7ebf9' }, // 226°
-  S: { ink: '#232395', glow: '#8484f5', wash: '#e7e7f9' }, // 240°
-  Cl: { ink: '#3a2395', glow: '#9b84f5', wash: '#eae7f9' }, // 252°
-  Temp: { ink: '#502395', glow: '#b184f5', wash: '#eee7f9' }, // 264°
-  Pol: { ink: '#672395', glow: '#c884f5', wash: '#f2e7f9' }, // 276°
+  NP: { ink: '#239595', glow: '#84f5f5', wash: '#e7f9f9' }, // 180°
+  CN: { ink: '#237c95', glow: '#84ddf5', wash: '#e7f5f9' }, // 193°
+  N: { ink: '#236195', glow: '#84c2f5', wash: '#e7f1f9' }, // 207°
+  Pron: { ink: '#234995', glow: '#84aaf5', wash: '#e7edf9' }, // 220°
+  Prep: { ink: '#232e95', glow: '#8490f5', wash: '#e7e8f9' }, // 234°
+  S: { ink: '#302395', glow: '#9184f5', wash: '#e9e7f9' }, // 247°
+  Cl: { ink: '#4b2395', glow: '#ac84f5', wash: '#ede7f9' }, // 261°
+  Temp: { ink: '#632395', glow: '#c484f5', wash: '#f1e7f9' }, // 274°
+  Pol: { ink: '#7e2395', glow: '#df84f5', wash: '#f5e7f9' }, // 288°
 }
 

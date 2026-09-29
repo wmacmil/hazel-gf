@@ -3,11 +3,13 @@ concrete HazelGFSwe of HazelGF = open SyntaxSwe, (Syn = SyntaxSwe), ParadigmsSwe
     S = Syn.S ; Cl = Syn.Cl ; NP = Syn.NP ; VP = Syn.VP ; CN = Syn.CN ;
     N = Syn.N ; V = Syn.V ; V2 = Syn.V2 ; Det = Syn.Det ;
     Pron = Syn.Pron ; Pol = Syn.Pol ; Temp = Syn.Temp ;
+    Adv = Syn.Adv ; Prep = Syn.Prep ;
 
   lin
     MkS t p cl = mkS t p cl ; PredVP np vp = mkCl np vp ;
     UseV v = mkVP v ; ComplV2 v np = mkVP v np ;
     DetCN det cn = mkNP det cn ; UseN n = mkCN n ; UsePron p = mkNP p ;
+    PrepNP p np = Syn.mkAdv p np ; AdvVP vp a = Syn.mkVP vp a ; AdvCN cn a = Syn.mkCN cn a ;
 
     Present = mkTemp presentTense simultaneousAnt ;
     Past = mkTemp pastTense simultaneousAnt ;
@@ -17,6 +19,10 @@ concrete HazelGFSwe of HazelGF = open SyntaxSwe, (Syn = SyntaxSwe), ParadigmsSwe
     PastPerfect = mkTemp pastTense anteriorAnt ;
     FuturePerfect = mkTemp futureTense anteriorAnt ;
     ConditionalPerfect = mkTemp conditionalTense anteriorAnt ;
+    TableN = mkN "bord" "bordet" "bord" "borden" neutrum ;
+    GardenN = mkN "trädgård" "trädgården" "trädgårdar" "trädgårdarna" utrum ;
+    CityN = mkN "stad" "staden" "städer" "städerna" utrum ;
+    InPrep = in_Prep ; OnPrep = on_Prep ; WithPrep = with_Prep ; ToPrep = to_Prep ; UnderPrep = under_Prep ;
     Positive = positivePol ; Negative = negativePol ;
     Definite = the_Det ; Indefinite = a_Det ;
     IPron = i_Pron ; YouPron = youSg_Pron ; HePron = he_Pron ;
@@ -39,4 +45,5 @@ concrete HazelGFSwe of HazelGF = open SyntaxSwe, (Syn = SyntaxSwe), ParadigmsSwe
     HoleCN = mkCN (mkN "⟦CN⟧") ; HoleN = mkN "⟦N⟧" ;
     HoleV = mkV "⟦V⟧" ; HoleV2 = mkV2 "⟦V2⟧" ;
     HoleDet = the_Det ; HolePron = i_Pron ; HolePol = positivePol ; HoleTemp = mkTemp presentTense simultaneousAnt ;
+    HoleAdv = ParadigmsSwe.mkAdv "⟦Adv⟧" ; HolePrep = in_Prep ;
 }

@@ -16,18 +16,18 @@ RunV   HePron PresentPerfect he has[PRES·PERF·3SG] run·∅[PTCP]
 RunV   IPron  Present        I run·∅[PRES]
 RunV   IPron  Past           I ~ran[PAST]
 RunV   IPron  PresentPerfect I have[PRES·PERF] run·∅[PTCP]
-SeeV2  HePron Present        he see·s[PRES·3SG] her
-SeeV2  HePron Past           he ~saw[PAST] her
-SeeV2  HePron PresentPerfect he has[PRES·PERF·3SG] see·n[PTCP] her
-SeeV2  IPron  Present        I see·∅[PRES] her
-SeeV2  IPron  Past           I ~saw[PAST] her
-SeeV2  IPron  PresentPerfect I have[PRES·PERF] see·n[PTCP] her
-LoveV2 HePron Present        he love·s[PRES·3SG] her
-LoveV2 HePron Past           he love·d[PAST] her
-LoveV2 HePron PresentPerfect he has[PRES·PERF·3SG] love·d[PTCP] her
-LoveV2 IPron  Present        I love·∅[PRES] her
-LoveV2 IPron  Past           I love·d[PAST] her
-LoveV2 IPron  PresentPerfect I have[PRES·PERF] love·d[PTCP] her
+SeeV2  HePron Present        he see·s[PRES·3SG] her[ACC]
+SeeV2  HePron Past           he ~saw[PAST] her[ACC]
+SeeV2  HePron PresentPerfect he has[PRES·PERF·3SG] see·n[PTCP] her[ACC]
+SeeV2  IPron  Present        I see·∅[PRES] her[ACC]
+SeeV2  IPron  Past           I ~saw[PAST] her[ACC]
+SeeV2  IPron  PresentPerfect I have[PRES·PERF] see·n[PTCP] her[ACC]
+LoveV2 HePron Present        he love·s[PRES·3SG] her[ACC]
+LoveV2 HePron Past           he love·d[PAST] her[ACC]
+LoveV2 HePron PresentPerfect he has[PRES·PERF·3SG] love·d[PTCP] her[ACC]
+LoveV2 IPron  Present        I love·∅[PRES] her[ACC]
+LoveV2 IPron  Past           I love·d[PAST] her[ACC]
+LoveV2 IPron  PresentPerfect I have[PRES·PERF] love·d[PTCP] her[ACC]
 ReadV2 HePron Present        he read·s[PRES·3SG] the[DEF] book
 ReadV2 HePron Past           he read·∅[PAST] the[DEF] book
 ReadV2 HePron PresentPerfect he has[PRES·PERF·3SG] read·∅[PTCP] the[DEF] book

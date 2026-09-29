@@ -123,6 +123,58 @@ function annotateVerbGroup(language: LanguageId, root: Node, segments: Linearize
   if (marksAgreement(profileOf(language), tense?.label)) finite.featureValues.push('3SG')
 }
 
+const CASE_IN_CELL = /\b(Nom|Acc|Dat|Gen)\b|NP(Nom|Acc)/
+const caseOf = (cell: string) => { const match = cell.match(CASE_IN_CELL); return match ? match[1] ?? match[2] : undefined }
+
+/**
+ * Case governed by a preposition (PrepNP) or transitive verb (ComplV2), taken
+ * from the probed government table. A word is labelled only where its form
+ * marks the case overtly, i.e. differs from the nominative of the same cell
+ * (dem ≠ der, ihm ≠ er, him ≠ he, but Haus = Haus). When the determiner
+ * emits nothing because the preposition absorbed it (German im, zum, in der),
+ * the preposition's last word realizes the determiner too.
+ * Returns each labelled word's governor, the controller of its case.
+ */
+function annotateCase(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms: Paradigms): Map<string, NodeId> {
+  const governors = new Map<string, NodeId>()
+  const government = paradigms.government[language] ?? {}
+  const tables = paradigms.tables[language] ?? {}
+  const nodes = new Map(preorder(root).map(node => [node.id, node]))
+  const mark = (segment: LinearizedSegment, label: string, governor: NodeId) => {
+    if (!segment.featureValues.includes(label)) segment.featureValues.push(label)
+    governors.set(segment.id, governor)
+  }
+  for (const phrase of preorder(root)) {
+    if (phrase.kind !== 'apply' || (phrase.constructor !== 'PrepNP' && phrase.constructor !== 'ComplV2')) continue
+    const [governor, np] = phrase.children
+    const governed = governor.kind === 'apply' ? government[governor.constructor] : undefined
+    if (!governed || governed === 'Nom' || np.kind !== 'apply') continue
+    const label = governed.toUpperCase()
+
+    const det = np.constructor === 'DetCN' ? np.children[0] : undefined
+    if (det?.kind === 'apply' && !segments.some(segment => segment.realizedBy.includes(det.id))) {
+      const carrier = segments.filter(segment => segment.realizedBy[0] === governor.id).at(-1)
+      if (carrier) { link(carrier, det, det.constructor === 'Indefinite' ? 'INDEF' : 'DEF'); mark(carrier, label, governor.id) }
+    }
+
+    const inside = new Set(preorder(np).map(node => node.id))
+    for (const segment of segments) {
+      const leaf = nodes.get(segment.realizedBy[0])
+      if (!leaf || !inside.has(leaf.id) || leaf.kind !== 'apply' || leaf.children.length) continue
+      const table = tables[leaf.constructor]
+      if (!table) continue
+      const nominatives = Object.entries(table).filter(([cell]) => caseOf(cell) === 'Nom').map(([, form]) => form)
+      const overt = Object.entries(table).some(([cell, form]) => {
+        if (form.toLowerCase() !== segment.text.toLowerCase() || cell.includes('Poss') || caseOf(cell) !== governed) return false
+        const counterpart = table[cell.replace(CASE_IN_CELL, match => match.startsWith('NP') ? 'NPNom' : 'Nom')]
+        return counterpart !== undefined ? counterpart !== form : !nominatives.includes(form)
+      })
+      if (overt) mark(segment, label, governor.id)
+    }
+  }
+  return governors
+}
+
 function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms?: Paradigms): LinearizedSegment[] {
   let result = segments.map(segment => ({ ...segment, realizedBy: [...segment.realizedBy], categories: [...segment.categories], featureValues: [...segment.featureValues] }))
 
@@ -155,15 +207,16 @@ function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[
     }
   }
 
+  const governors = paradigms ? annotateCase(language, root, result, paradigms) : new Map<string, NodeId>()
   annotateVerbGroup(language, root, result)
-  if (paradigms) attachMorphemes(language, root, result, paradigms)
+  if (paradigms) attachMorphemes(language, root, result, paradigms, governors)
   return result
 }
 
 const LEXICAL_CATEGORIES = new Set(['N', 'V', 'V2', 'Pron', 'Det'])
 
 /** Split every overt word into morpheme sub-boxes, each linked to the nodes that control it. */
-function attachMorphemes(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms: Paradigms) {
+function attachMorphemes(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms: Paradigms, governors: Map<string, NodeId>) {
   const temp = findApply(root, 'MkS')[0]?.children[0]
   const pol = findApply(root, 'Negative')[0]
   const subject = findApply(root, 'PredVP')[0]?.children[0]
@@ -185,6 +238,7 @@ function attachMorphemes(language: LanguageId, root: Node, segments: LinearizedS
       controllers: {
         tense: temp?.id, aspect: temp?.id, agreement: subjectHead?.id, polarity: pol?.id,
         definiteness: lexeme ? determinerOf.get(lexeme.id) : undefined,
+        case: governors.get(segment.id),
       },
     }, paradigms)
   }

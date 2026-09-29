@@ -3,6 +3,7 @@ concrete HazelGFEng of HazelGF = open SyntaxEng, (Syn = SyntaxEng), ParadigmsEng
     S = Syn.S ; Cl = Syn.Cl ; NP = Syn.NP ; VP = Syn.VP ; CN = Syn.CN ;
     N = Syn.N ; V = Syn.V ; V2 = Syn.V2 ; Det = Syn.Det ;
     Pron = Syn.Pron ; Pol = Syn.Pol ; Temp = Syn.Temp ;
+    Adv = Syn.Adv ; Prep = Syn.Prep ;
 
   lin
     MkS t p cl = mkS t p cl ;
@@ -12,6 +13,7 @@ concrete HazelGFEng of HazelGF = open SyntaxEng, (Syn = SyntaxEng), ParadigmsEng
     DetCN det cn = mkNP det cn ;
     UseN n = mkCN n ;
     UsePron p = mkNP p ;
+    PrepNP p np = Syn.mkAdv p np ; AdvVP vp a = Syn.mkVP vp a ; AdvCN cn a = Syn.mkCN cn a ;
 
     Present = mkTemp presentTense simultaneousAnt ;
     Past = mkTemp pastTense simultaneousAnt ;
@@ -21,6 +23,8 @@ concrete HazelGFEng of HazelGF = open SyntaxEng, (Syn = SyntaxEng), ParadigmsEng
     PastPerfect = mkTemp pastTense anteriorAnt ;
     FuturePerfect = mkTemp futureTense anteriorAnt ;
     ConditionalPerfect = mkTemp conditionalTense anteriorAnt ;
+    TableN = mkN "table" ; GardenN = mkN "garden" ; CityN = mkN "city" "cities" ;
+    InPrep = in_Prep ; OnPrep = on_Prep ; WithPrep = with_Prep ; ToPrep = to_Prep ; UnderPrep = under_Prep ;
     Positive = positivePol ; Negative = negativePol ;
     Definite = the_Det ; Indefinite = a_Det ;
     IPron = i_Pron ; YouPron = youSg_Pron ; HePron = he_Pron ;
@@ -40,4 +44,5 @@ concrete HazelGFEng of HazelGF = open SyntaxEng, (Syn = SyntaxEng), ParadigmsEng
     HoleCN = mkCN (mkN "⟦CN⟧") ; HoleN = mkN "⟦N⟧" ;
     HoleV = mkV "⟦V⟧" ; HoleV2 = mkV2 "⟦V2⟧" ;
     HoleDet = the_Det ; HolePron = i_Pron ; HolePol = positivePol ; HoleTemp = mkTemp presentTense simultaneousAnt ;
+    HoleAdv = ParadigmsEng.mkAdv "⟦Adv⟧" ; HolePrep = in_Prep ;
 }

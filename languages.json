@@ -38,7 +38,15 @@
       "RunV": "run",
       "SeeV2": "see",
       "LoveV2": "love",
-      "ReadV2": "read"
+      "ReadV2": "read",
+      "TableN": "table",
+      "GardenN": "garden",
+      "CityN": "city",
+      "InPrep": "in",
+      "OnPrep": "on",
+      "WithPrep": "with",
+      "ToPrep": "to",
+      "UnderPrep": "under"
     },
     "smoke": [
       {
@@ -109,7 +117,15 @@
       "RunV": "laufen",
       "SeeV2": "sehen",
       "LoveV2": "lieben",
-      "ReadV2": "lesen"
+      "ReadV2": "lesen",
+      "TableN": "Tisch",
+      "GardenN": "Garten",
+      "CityN": "Stadt",
+      "InPrep": "in",
+      "OnPrep": "auf",
+      "WithPrep": "mit",
+      "ToPrep": "zu",
+      "UnderPrep": "unter"
     },
     "smoke": [
       {
@@ -159,7 +175,15 @@
       "RunV": "springa",
       "SeeV2": "se",
       "LoveV2": "älska",
-      "ReadV2": "läsa"
+      "ReadV2": "läsa",
+      "TableN": "bord",
+      "GardenN": "trädgård",
+      "CityN": "stad",
+      "InPrep": "i",
+      "OnPrep": "på",
+      "WithPrep": "med",
+      "ToPrep": "till",
+      "UnderPrep": "under"
     },
     "smoke": [
       {

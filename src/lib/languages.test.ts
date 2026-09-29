@@ -1,15 +1,11 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { linearizeInBrowser, loadBrowserGrammar } from './browser-gf'
 import { fromGfTerm } from './editor'
 import { CONSTRUCTORS } from './grammar'
 import { LANGUAGES } from './languages'
-import type { Paradigms } from './morphology'
+import { grammarJson, paradigms } from './oracle.testkit'
 
-const app = resolve(__dirname, '../..')
-const grammar = loadBrowserGrammar(JSON.parse(readFileSync(resolve(app, 'public/HazelGF.json'), 'utf8')))
-const paradigms = JSON.parse(readFileSync(resolve(app, 'public/static/paradigms.json'), 'utf8')) as Paradigms
+const grammar = loadBrowserGrammar(grammarJson())
 const LEXICAL = new Set(['N', 'V', 'V2'])
 
 /** Everything a language must satisfy; see docs/adding-a-language.md. */
@@ -31,7 +27,7 @@ describe.each(LANGUAGES.map(profile => [profile.id, profile] as const))('languag
     }
     for (const constructor of CONSTRUCTORS.filter(item => LEXICAL.has(item.output))) {
       const cell = constructor.output === 'N' ? profile.citation.noun : profile.citation.verb
-      expect(paradigms[id]?.[constructor.id]?.[cell], `${constructor.id} ${cell}`).toBeTruthy()
+      expect(paradigms.tables[id]?.[constructor.id]?.[cell], `${constructor.id} ${cell}`).toBeTruthy()
     }
   })
 

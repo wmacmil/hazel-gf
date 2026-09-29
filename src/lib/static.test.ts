@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { agreementExample, exampleDocument } from './examples'
 import { fromGfTerm, toGfTerm } from './editor'
@@ -7,32 +5,32 @@ import { producers } from './grammar'
 import { normalizeLinearizations, type RawLinearization } from './projection'
 import { phraseBoxes } from './boxes'
 import type { ApplyNode, CategoryId } from './model'
-import type { Paradigms } from './morphology'
+import { grammarJson, oracleIndex, oracleShard, oracleTable, paradigms } from './oracle.testkit'
+import { linearizeInBrowser, loadBrowserGrammar } from './browser-gf'
+import { LANGUAGE_IDS } from './languages'
 
 /** A complete term is `MkS <Temp> <Pol> (...)`; the Temp constructor names its oracle shard. */
 const tenseOf = (term: string) => term.split(' ')[1]
-const staticDir = resolve(__dirname, '../../oracle')
-const paradigmsFile = resolve(__dirname, '../../public/static/paradigms.json')
-const { shards } = JSON.parse(readFileSync(resolve(staticDir, 'index.json'), 'utf8')) as { shards: string[] }
-const paradigms = JSON.parse(readFileSync(paradigmsFile, 'utf8')) as Paradigms
-const table: Record<string, RawLinearization[]> = Object.assign({}, ...shards.map(tense =>
-  JSON.parse(readFileSync(resolve(staticDir, `linearizations-${tense}.json`), 'utf8'))))
+const shards = oracleIndex.shards
+const table = oracleTable()
 
-/** Number of complete trees of a category, counted from the editor's own palette. */
+/** Number of complete PP-free trees of a category, counted from the editor's own palette (adverbials recurse). */
 function completeTrees(category: CategoryId): number {
-  return producers(category).reduce(
+  return producers(category).filter(constructor => !constructor.inputs.includes('Adv')).reduce(
     (total, constructor) => total + constructor.inputs.reduce((product, input) => product * completeTrees(input), 1), 0)
 }
 
 describe('precomputed static linearizations', () => {
-  it('covers exactly the complete S trees the editor can build', () => {
-    expect(Object.keys(table)).toHaveLength(completeTrees('S'))
+  it('covers exactly the PP-free S trees the editor can build, plus the PP sample', () => {
+    expect(oracleIndex.plain).toBe(completeTrees('S'))
+    expect(Object.keys(table)).toHaveLength(oracleIndex.trees)
+    expect(Object.keys(table).filter(term => !term.includes('Adv'))).toHaveLength(oracleIndex.plain)
   })
 
   it('shards by tense so each tree is found in its own shard', () => {
     expect(shards).toEqual(producers('Temp').map(item => item.id).sort())
     for (const tense of shards) {
-      const shard = JSON.parse(readFileSync(resolve(staticDir, `linearizations-${tense}.json`), 'utf8')) as Record<string, unknown>
+      const shard = oracleShard(tense)
       expect(Object.keys(shard).every(term => tenseOf(term) === tense)).toBe(true)
     }
   })
@@ -83,9 +81,26 @@ describe('phrase boxes over the surface', () => {
     expect(box('Negative').runs).toEqual([[3, 3]])
   })
 
+  it('spans a PP inside a German perfect and never treats a preposition as an auxiliary', () => {
+    const term = 'MkS PresentPerfect Negative (PredVP (DetCN Definite (UseN ManN)) (AdvVP (UseV SleepV) (PrepNP WithPrep (DetCN Definite (UseN DogN)))))'
+    const root = fromGfTerm(term)
+    // Not in the oracle's PP sample; the browser runtime is conformance-tested against the server.
+    const raw = linearizeInBrowser(loadBrowserGrammar(grammarJson()), term, root, LANGUAGE_IDS)
+    const german = normalizeLinearizations(raw, root, 1, paradigms)[1]
+    expect(german.text).toBe('der Mann hat nicht mit dem Hund geschlafen')
+    const box = (constructor: string) => phraseBoxes(root, german).find(item => item.label === constructor)!
+    expect(box('PrepNP').runs).toEqual([[4, 6]])
+    expect(box('AdvVP').runs).toEqual([[4, 7]])
+    expect(box('PresentPerfect').runs).toEqual([[2, 2], [7, 7]])
+    const word = (text: string) => german.segments.find(segment => segment.text === text)!
+    expect(word('mit').featureValues).toEqual([])
+    expect(word('hat').featureValues).toEqual(['PRES', 'PERF', '3SG'])
+    expect(word('dem').featureValues).toEqual(['DEF', 'DAT'])
+  })
+
   it('never overlaps two boxes in a row, for every German sentence in two tenses', () => {
     for (const tense of ['Present', 'FuturePerfect']) {
-      const shard = JSON.parse(readFileSync(resolve(staticDir, `linearizations-${tense}.json`), 'utf8')) as Record<string, RawLinearization[]>
+      const shard = oracleShard(tense)
       for (const term of Object.keys(shard).slice(0, 400)) {
         const root = fromGfTerm(term)
         const projection = normalizeLinearizations(shard[term], root, 1, paradigms)[1]

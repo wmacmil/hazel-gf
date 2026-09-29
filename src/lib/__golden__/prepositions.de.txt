@@ -1,0 +1,50 @@
+InPrep    Present        ich schlaf·e[PRES] im[DEF·DAT] Tisch
+InPrep    Present        ich schlaf·e[PRES] in der[DEF·DAT] Stadt
+InPrep    Present        ich schlaf·e[PRES] in einem[INDEF·DAT] Garten
+InPrep    Present        ich schlaf·e[PRES] in ihm[DAT]
+InPrep    Present        ich schlaf·e[PRES] in ihnen[DAT]
+OnPrep    Present        ich schlaf·e[PRES] auf dem[DEF·DAT] Tisch
+OnPrep    Present        ich schlaf·e[PRES] auf der[DEF·DAT] Stadt
+OnPrep    Present        ich schlaf·e[PRES] auf einem[INDEF·DAT] Garten
+OnPrep    Present        ich schlaf·e[PRES] auf ihm[DAT]
+OnPrep    Present        ich schlaf·e[PRES] auf ihnen[DAT]
+WithPrep  Present        ich schlaf·e[PRES] mit dem[DEF·DAT] Tisch
+WithPrep  Present        ich schlaf·e[PRES] mit der[DEF·DAT] Stadt
+WithPrep  Present        ich schlaf·e[PRES] mit einem[INDEF·DAT] Garten
+WithPrep  Present        ich schlaf·e[PRES] mit ihm[DAT]
+WithPrep  Present        ich schlaf·e[PRES] mit ihnen[DAT]
+ToPrep    Present        ich schlaf·e[PRES] zum[DEF·DAT] Tisch
+ToPrep    Present        ich schlaf·e[PRES] zur[DEF·DAT] Stadt
+ToPrep    Present        ich schlaf·e[PRES] zu einem[INDEF·DAT] Garten
+ToPrep    Present        ich schlaf·e[PRES] zu ihm[DAT]
+ToPrep    Present        ich schlaf·e[PRES] zu ihnen[DAT]
+UnderPrep Present        ich schlaf·e[PRES] unter dem[DEF·DAT] Tisch
+UnderPrep Present        ich schlaf·e[PRES] unter der[DEF·DAT] Stadt
+UnderPrep Present        ich schlaf·e[PRES] unter einem[INDEF·DAT] Garten
+UnderPrep Present        ich schlaf·e[PRES] unter ihm[DAT]
+UnderPrep Present        ich schlaf·e[PRES] unter ihnen[DAT]
+InPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] im[DEF·DAT] Tisch ge[PTCP]·~gang·en[PTCP]
+InPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] in der[DEF·DAT] Stadt ge[PTCP]·~gang·en[PTCP]
+InPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] in einem[INDEF·DAT] Garten ge[PTCP]·~gang·en[PTCP]
+InPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] in ihm[DAT] ge[PTCP]·~gang·en[PTCP]
+InPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] in ihnen[DAT] ge[PTCP]·~gang·en[PTCP]
+OnPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] auf dem[DEF·DAT] Tisch ge[PTCP]·~gang·en[PTCP]
+OnPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] auf der[DEF·DAT] Stadt ge[PTCP]·~gang·en[PTCP]
+OnPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] auf einem[INDEF·DAT] Garten ge[PTCP]·~gang·en[PTCP]
+OnPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] auf ihm[DAT] ge[PTCP]·~gang·en[PTCP]
+OnPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] auf ihnen[DAT] ge[PTCP]·~gang·en[PTCP]
+WithPrep  PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] mit dem[DEF·DAT] Tisch ge[PTCP]·~gang·en[PTCP]
+WithPrep  PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] mit der[DEF·DAT] Stadt ge[PTCP]·~gang·en[PTCP]
+WithPrep  PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] mit einem[INDEF·DAT] Garten ge[PTCP]·~gang·en[PTCP]
+WithPrep  PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] mit ihm[DAT] ge[PTCP]·~gang·en[PTCP]
+WithPrep  PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] mit ihnen[DAT] ge[PTCP]·~gang·en[PTCP]
+ToPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] zum[DEF·DAT] Tisch ge[PTCP]·~gang·en[PTCP]
+ToPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] zur[DEF·DAT] Stadt ge[PTCP]·~gang·en[PTCP]
+ToPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] zu einem[INDEF·DAT] Garten ge[PTCP]·~gang·en[PTCP]
+ToPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] zu ihm[DAT] ge[PTCP]·~gang·en[PTCP]
+ToPrep    PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] zu ihnen[DAT] ge[PTCP]·~gang·en[PTCP]
+UnderPrep PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] unter dem[DEF·DAT] Tisch ge[PTCP]·~gang·en[PTCP]
+UnderPrep PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] unter der[DEF·DAT] Stadt ge[PTCP]·~gang·en[PTCP]
+UnderPrep PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] unter einem[INDEF·DAT] Garten ge[PTCP]·~gang·en[PTCP]
+UnderPrep PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] unter ihm[DAT] ge[PTCP]·~gang·en[PTCP]
+UnderPrep PresentPerfect der[DEF] Mann ist[PRES·PERF·3SG] unter ihnen[DAT] ge[PTCP]·~gang·en[PTCP]

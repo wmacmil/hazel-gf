@@ -3,11 +3,13 @@ concrete HazelGFGer of HazelGF = open SyntaxGer, (Syn = SyntaxGer), ParadigmsGer
     S = Syn.S ; Cl = Syn.Cl ; NP = Syn.NP ; VP = Syn.VP ; CN = Syn.CN ;
     N = Syn.N ; V = Syn.V ; V2 = Syn.V2 ; Det = Syn.Det ;
     Pron = Syn.Pron ; Pol = Syn.Pol ; Temp = Syn.Temp ;
+    Adv = Syn.Adv ; Prep = Syn.Prep ;
 
   lin
     MkS t p cl = mkS t p cl ; PredVP np vp = mkCl np vp ;
     UseV v = mkVP v ; ComplV2 v np = mkVP v np ;
     DetCN det cn = mkNP det cn ; UseN n = mkCN n ; UsePron p = mkNP p ;
+    PrepNP p np = Syn.mkAdv p np ; AdvVP vp a = Syn.mkVP vp a ; AdvCN cn a = Syn.mkCN cn a ;
 
     Present = mkTemp presentTense simultaneousAnt ;
     Past = mkTemp pastTense simultaneousAnt ;
@@ -17,6 +19,11 @@ concrete HazelGFGer of HazelGF = open SyntaxGer, (Syn = SyntaxGer), ParadigmsGer
     PastPerfect = mkTemp pastTense anteriorAnt ;
     FuturePerfect = mkTemp futureTense anteriorAnt ;
     ConditionalPerfect = mkTemp conditionalTense anteriorAnt ;
+    TableN = mkN "Tisch" "Tische" masculine ;
+    GardenN = mkN "Garten" "Gärten" masculine ;
+    CityN = mkN "Stadt" "Städte" feminine ;
+    -- in/zu contract with the article: im, zum, zur.
+    InPrep = inDat_Prep ; OnPrep = on_Prep ; WithPrep = with_Prep ; ToPrep = zu_Prep ; UnderPrep = under_Prep ;
     Positive = positivePol ; Negative = negativePol ;
     Definite = the_Det ; Indefinite = a_Det ;
     IPron = i_Pron ; YouPron = youSg_Pron ; HePron = he_Pron ;
@@ -41,4 +48,5 @@ concrete HazelGFGer of HazelGF = open SyntaxGer, (Syn = SyntaxGer), ParadigmsGer
     HoleCN = mkCN (mkN "⟦CN⟧") ; HoleN = mkN "⟦N⟧" ;
     HoleV = mkV "warten" ; HoleV2 = mkV2 "sehen" ;
     HoleDet = the_Det ; HolePron = i_Pron ; HolePol = positivePol ; HoleTemp = mkTemp presentTense simultaneousAnt ;
+    HoleAdv = ParadigmsGer.mkAdv "⟦Adv⟧" ; HolePrep = in_Prep ;
 }

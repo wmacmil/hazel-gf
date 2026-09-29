@@ -1,11 +1,18 @@
 import type { LanguageId, Morpheme, NodeId } from './model'
 import { profileOf } from './languages'
 
-/** GF `l -table` output per language and lexical leaf: parameter cell → form. */
-export type Paradigms = Record<LanguageId, Record<string, Record<string, string>>>
+/**
+ * From scripts/oracle.mjs: GF's `l -table` per language and lexical leaf
+ * (parameter cell → form), and the case each preposition and transitive verb
+ * governs (recovered by probing, since GF's tables do not show it).
+ */
+export type Paradigms = {
+  tables: Record<LanguageId, Record<string, Record<string, string>>>
+  government: Record<LanguageId, Record<string, string>>
+}
 
 /** Which algebra axis a feature label belongs to; morpheme colors are per axis. */
-export type FeatureAxis = 'tense' | 'aspect' | 'agreement' | 'polarity' | 'definiteness'
+export type FeatureAxis = 'tense' | 'aspect' | 'agreement' | 'polarity' | 'definiteness' | 'case'
 
 export const FEATURE_AXES: Record<string, FeatureAxis> = {
   PRES: 'tense', PAST: 'tense', FUT: 'tense', COND: 'tense',
@@ -13,6 +20,7 @@ export const FEATURE_AXES: Record<string, FeatureAxis> = {
   '3SG': 'agreement',
   NEG: 'polarity',
   DEF: 'definiteness', INDEF: 'definiteness',
+  ACC: 'case', DAT: 'case', GEN: 'case',
 }
 
 export type WordContext = {
@@ -35,7 +43,7 @@ const commonPrefix = (words: string[]) => {
 
 function stemOf(context: WordContext, paradigms: Paradigms): string | undefined {
   const { language, lexeme } = context
-  const table = lexeme && paradigms[language]?.[lexeme.constructor]
+  const table = lexeme && paradigms.tables[language]?.[lexeme.constructor]
   if (!table) return undefined
   const profile = profileOf(language)
   const isVerb = lexeme.category === 'V' || lexeme.category === 'V2'
@@ -88,7 +96,7 @@ export function segmentWord(context: WordContext, paradigms: Paradigms): Morphem
   const personalEndings = profile.personalEndings
   const rowPrefix = personalEndings && tense.length ? personalEndings.rows[tense[0]] : undefined
   if (personalEndings && rowPrefix) {
-    const table = paradigms[language][lexeme.constructor]
+    const table = paradigms.tables[language][lexeme.constructor]
     const row = Object.entries(table).filter(([cell]) => cell.startsWith(rowPrefix))
     const rowStem = commonPrefix(row.map(([, form]) => form))
     // Syncretic cells (liest = 2SG = 3SG) are resolved by the subject's agreement.

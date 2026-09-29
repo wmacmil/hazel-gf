@@ -10,7 +10,7 @@
     clearFocused, fillFocused, findNode, isComplete, moveFocus, newDocument, outputOf,
     moveSubtree, swapLeaf, toGfTerm, validateDocument, wrapFocused,
   } from './lib/editor'
-  import { agreementExample, exampleDocument } from './lib/examples'
+  import { agreementExample, exampleDocument, modifierExample, prepositionExample } from './lib/examples'
   import { partialProjections } from './lib/projection'
   import { allowedTenses, togglePins } from './lib/constraints'
   import { CATEGORY_COLORS, type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
@@ -171,6 +171,8 @@
     const preset = new URLSearchParams(location.search).get('example')
     if (preset === 'see') document = exampleDocument()
     else if (preset === 'agreement') document = agreementExample()
+    else if (preset === 'place') document = prepositionExample()
+    else if (preset === 'with') document = modifierExample()
     else {
       const saved = localStorage.getItem(STORAGE_KEY)
       try {
@@ -234,6 +236,8 @@
       <span class="kicker">worked trees</span>
       <button onclick={() => commit(exampleDocument())}>I see the woman</button>
       <button onclick={() => commit(agreementExample())}>the man does not sleep</button>
+      <button onclick={() => commit(prepositionExample())}>the man sleeps in the house</button>
+      <button onclick={() => commit(modifierExample())}>I see the woman with the dog</button>
       <button onclick={() => commit(newDocument())}>blank sentence</button>
     </div>
   </aside>

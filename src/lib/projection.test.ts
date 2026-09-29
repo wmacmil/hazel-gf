@@ -2,11 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { agreementExample, exampleDocument } from './examples'
 import { findNode, preorder } from './editor'
 import { normalizeLinearizations, partialProjections, type RawBracket } from './projection'
-import type { Paradigms } from './morphology'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { paradigms } from './oracle.testkit'
 
-const paradigms = JSON.parse(readFileSync(resolve(__dirname, '../../public/static/paradigms.json'), 'utf8')) as Paradigms
+
 
 const bracket = (funName: string, cat: string, ...children: RawBracket[]): RawBracket =>
   ({ fun: funName, cat, fid: 0, index: 0, children })

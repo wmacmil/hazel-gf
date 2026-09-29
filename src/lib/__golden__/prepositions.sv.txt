@@ -1,0 +1,50 @@
+InPrep    Present        jag sov·er[PRES] i bord·et[DEF]
+InPrep    Present        jag sov·er[PRES] i stad·en[DEF]
+InPrep    Present        jag sov·er[PRES] i en[INDEF] trädgård
+InPrep    Present        jag sov·er[PRES] i honom[ACC]
+InPrep    Present        jag sov·er[PRES] i dem[ACC]
+OnPrep    Present        jag sov·er[PRES] på bord·et[DEF]
+OnPrep    Present        jag sov·er[PRES] på stad·en[DEF]
+OnPrep    Present        jag sov·er[PRES] på en[INDEF] trädgård
+OnPrep    Present        jag sov·er[PRES] på honom[ACC]
+OnPrep    Present        jag sov·er[PRES] på dem[ACC]
+WithPrep  Present        jag sov·er[PRES] med bord·et[DEF]
+WithPrep  Present        jag sov·er[PRES] med stad·en[DEF]
+WithPrep  Present        jag sov·er[PRES] med en[INDEF] trädgård
+WithPrep  Present        jag sov·er[PRES] med honom[ACC]
+WithPrep  Present        jag sov·er[PRES] med dem[ACC]
+ToPrep    Present        jag sov·er[PRES] till bord·et[DEF]
+ToPrep    Present        jag sov·er[PRES] till stad·en[DEF]
+ToPrep    Present        jag sov·er[PRES] till en[INDEF] trädgård
+ToPrep    Present        jag sov·er[PRES] till honom[ACC]
+ToPrep    Present        jag sov·er[PRES] till dem[ACC]
+UnderPrep Present        jag sov·er[PRES] under bord·et[DEF]
+UnderPrep Present        jag sov·er[PRES] under stad·en[DEF]
+UnderPrep Present        jag sov·er[PRES] under en[INDEF] trädgård
+UnderPrep Present        jag sov·er[PRES] under honom[ACC]
+UnderPrep Present        jag sov·er[PRES] under dem[ACC]
+InPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] i bord·et[DEF]
+InPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] i stad·en[DEF]
+InPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] i en[INDEF] trädgård
+InPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] i honom[ACC]
+InPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] i dem[ACC]
+OnPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] på bord·et[DEF]
+OnPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] på stad·en[DEF]
+OnPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] på en[INDEF] trädgård
+OnPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] på honom[ACC]
+OnPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] på dem[ACC]
+WithPrep  PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] med bord·et[DEF]
+WithPrep  PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] med stad·en[DEF]
+WithPrep  PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] med en[INDEF] trädgård
+WithPrep  PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] med honom[ACC]
+WithPrep  PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] med dem[ACC]
+ToPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] till bord·et[DEF]
+ToPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] till stad·en[DEF]
+ToPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] till en[INDEF] trädgård
+ToPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] till honom[ACC]
+ToPrep    PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] till dem[ACC]
+UnderPrep PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] under bord·et[DEF]
+UnderPrep PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] under stad·en[DEF]
+UnderPrep PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] under en[INDEF] trädgård
+UnderPrep PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] under honom[ACC]
+UnderPrep PresentPerfect man·nen[DEF] har[PRES·PERF]·∅[3SG] gå·tt[PTCP] under dem[ACC]

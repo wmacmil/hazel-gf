@@ -60,6 +60,21 @@ of the same sort behind. `isValidConnection` asks the kernel
 wire, e.g. *Sort VP does not match port NP*. The canvas is a projection of the
 document, rebuilt from the tree on each change, never edited in place.
 
+## Prepositional phrases
+
+`PrepNP : (Prep, NP) → Adv`, `AdvVP : (VP, Adv) → VP`, `AdvCN : (CN, Adv) → CN`,
+with *in, on, with, to, under*. The grammar is now recursive, which is why GF
+runs in the browser rather than from a precomputed table. Focus a VP or CN and
+the palette offers the adverbial as a type-correct wrapper.
+
+Case comes from government. GF's tables do not show which case a preposition
+or verb governs, so `npm run oracle` recovers it by governing a pronoun and
+reading which paradigm cell comes back (*mit* + *er* → *ihm* = Dat). A word
+is labelled `DAT`/`ACC` only where its form marks the case overtly (*dem*,
+*ihm*, *him*, *henne*; not *Haus* or *sie*), with the preposition or verb as
+its controller. German contractions (*im*, *zum*, *zur*, *in der*) are the
+preposition absorbing the article; that word realizes both nodes.
+
 ## Tense
 
 `MkS : (Temp, Pol, Cl) → S`. `Temp` has eight leaves—present, past, future,
