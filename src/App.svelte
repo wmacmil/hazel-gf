@@ -2,17 +2,18 @@
   import { onMount } from 'svelte'
   import TreeNode from './components/TreeNode.svelte'
   import ProjectionRow from './components/ProjectionRow.svelte'
+  import TenseVariations from './components/TenseVariations.svelte'
   import { createRuntime } from './lib/gf'
   import { producers, profile, wrappers } from './lib/grammar'
   import {
     clearFocused, fillFocused, findNode, isComplete, moveFocus, newDocument, outputOf,
-    toGfTerm, validateDocument, wrapFocused,
+    swapLeaf, toGfTerm, validateDocument, wrapFocused,
   } from './lib/editor'
   import { agreementExample, exampleDocument } from './lib/examples'
   import { partialProjections } from './lib/projection'
-  import { CATEGORY_COLORS, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
+  import { CATEGORY_COLORS, type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
 
-  const STORAGE_KEY = 'hazel-gf-document-v1'
+  const STORAGE_KEY = 'hazel-gf-document-v2'
   const runtime = createRuntime()
   let document = $state<EditorDocument>(newDocument())
   let history = $state<EditorDocument[]>([])
@@ -29,6 +30,13 @@
   const wrapChoices = $derived(focused.kind === 'apply'
     ? wrappers(outputOf(focused)).filter(item => item.constructor.output === outputOf(focused))
     : [])
+
+  const complete = $derived(isComplete(document.root))
+
+  function pickTense(tense: ConstructorId) {
+    if (document.root.kind !== 'apply') return
+    commit({ ...document, root: swapLeaf(document.root, document.root.children[0].id, tense) })
+  }
 
   const clone = (value: EditorDocument): EditorDocument => $state.snapshot(value) as EditorDocument
 
@@ -223,6 +231,10 @@
       {/each}
       {#if error}<p class="error">{error}</p>{/if}
     </div>
+
+    {#if complete && document.root.kind === 'apply'}
+      <TenseVariations root={document.root} {runtime} {linked} onPick={pickTense} onHover={ids => linked = ids} />
+    {/if}
   </section>
 </main>
 

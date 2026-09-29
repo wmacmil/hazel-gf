@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   clearFocused, fillFocused, findNode, isComplete, newDocument, outputOf, toGfTerm,
-  validateDocument, wrapFocused,
+  swapLeaf, validateDocument, wrapFocused,
 } from './editor'
 import { exampleDocument } from './examples'
 
@@ -11,7 +11,7 @@ describe('typed structure editing', () => {
     const sentence = fillFocused(blank, 'MkS')
     expect(outputOf(sentence.root)).toBe('S')
     expect(findNode(sentence.root, sentence.focus)?.kind).toBe('hole')
-    expect(outputOf(findNode(sentence.root, sentence.focus)!)).toBe('Pol')
+    expect(outputOf(findNode(sentence.root, sentence.focus)!)).toBe('Temp')
     expect(() => fillFocused(blank, 'PredVP')).toThrow(/does not match/)
   })
 
@@ -28,10 +28,22 @@ describe('typed structure editing', () => {
     expect(() => wrapFocused(example, 'UseV', 0)).toThrow(/does not match/)
   })
 
+  it('swaps a leaf only for an operation of the same color, keeping its identity', () => {
+    const example = exampleDocument()
+    const root = example.root
+    if (root.kind !== 'apply') throw new Error('fixture')
+    const tense = root.children[0]
+    const past = swapLeaf(root, tense.id, 'Past')
+    expect(toGfTerm(past)).toBe('MkS Past Positive (PredVP (UsePron IPron) (ComplV2 SeeV2 (DetCN Definite (UseN WomanN))))')
+    expect(findNode(past, tense.id)).toMatchObject({ constructor: 'Past', output: 'Temp' })
+    expect(() => swapLeaf(root, tense.id, 'Negative')).toThrow(/does not match/)
+    expect(() => swapLeaf(root, root.id, 'Past')).toThrow(/leaf/)
+  })
+
   it('serializes complete trees and refuses holes', () => {
     const example = exampleDocument()
     expect(isComplete(example.root)).toBe(true)
-    expect(toGfTerm(example.root)).toBe('MkS Positive (PredVP (UsePron IPron) (ComplV2 SeeV2 (DetCN Definite (UseN WomanN))))')
+    expect(toGfTerm(example.root)).toBe('MkS Present Positive (PredVP (UsePron IPron) (ComplV2 SeeV2 (DetCN Definite (UseN WomanN))))')
     expect(() => toGfTerm(newDocument().root)).toThrow(/Incomplete S hole/)
   })
 

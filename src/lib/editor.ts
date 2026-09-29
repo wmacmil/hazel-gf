@@ -12,7 +12,7 @@ export function newDocument(): EditorDocument {
   const root = hole('S')
   return {
     schemaVersion: 1,
-    grammar: { name: 'HazelGF', fingerprint: 'hazel-gf-v1' },
+    grammar: { name: 'HazelGF', fingerprint: 'hazel-gf-v2' },
     startCategory: 'S',
     root,
     focus: root.id,
@@ -67,6 +67,15 @@ export function fillFocused(document: EditorDocument, constructorId: Constructor
   }
   const nextFocus = replacement.children[0]?.id ?? replacement.id
   return { ...document, root: replaceNode(document.root, focus.id, replacement), focus: nextFocus }
+}
+
+/** Replace one leaf by another nullary operation of the same color, keeping the node's identity. */
+export function swapLeaf(root: Node, id: NodeId, constructorId: ConstructorId): Node {
+  const leaf = findNode(root, id)
+  const constructor = constructorById.get(constructorId)
+  if (!leaf || leaf.kind !== 'apply' || leaf.children.length) throw new Error('Only a filled leaf can be swapped')
+  if (!constructor || constructor.inputs.length || constructor.output !== leaf.output) throw new Error('Constructor output does not match leaf')
+  return replaceNode(root, id, { ...leaf, constructor: constructor.id })
 }
 
 export function clearFocused(document: EditorDocument): EditorDocument {
@@ -128,7 +137,7 @@ export function toGfTerm(node: Node): string {
 export function validateDocument(value: unknown): value is EditorDocument {
   if (!value || typeof value !== 'object') return false
   const doc = value as Partial<EditorDocument>
-  if (doc.schemaVersion !== 1 || doc.grammar?.fingerprint !== 'hazel-gf-v1' || !doc.root || !doc.focus) return false
+  if (doc.schemaVersion !== 1 || doc.grammar?.fingerprint !== 'hazel-gf-v2' || !doc.root || !doc.focus) return false
   const visit = (node: Node, expected: CategoryId): boolean => {
     if (!node || outputOf(node) !== expected) return false
     if (node.kind === 'hole') return true

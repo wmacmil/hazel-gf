@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { CATEGORY_COLORS, languageLabels, type CategoryId, type LinearizationProjection, type NodeId } from '../lib/model'
+  import { languageLabels, type LinearizationProjection, type NodeId } from '../lib/model'
+  import { segmentStyle } from '../lib/style'
 
   let {
     projection, focus, linked = [], onFocus, onHover,
@@ -10,13 +11,6 @@
     onFocus: (id: NodeId) => void
     onHover: (ids: NodeId[]) => void
   } = $props()
-
-  const segmentStyle = (categories: CategoryId[]) => {
-    const colors = categories.map(category => CATEGORY_COLORS[category])
-    if (!colors.length) return ''
-    if (colors.length === 1) return `--seg-ink:${colors[0].ink};--seg-wash:${colors[0].wash}`
-    return `--seg-ink:${colors[0].ink};--seg-wash:linear-gradient(110deg, ${colors.map(color => color.wash).join(', ')})`
-  }
 
   const isActive = (segmentId: string) =>
     (projection.nodeYields[focus] ?? []).includes(segmentId)

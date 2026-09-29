@@ -13,9 +13,10 @@ occurrences; morphology annotations expose fused and empty exponents.
 **Try it:** <https://wmacmil.github.io/hazel-gf/> — no install needed.
 
 The hosted version needs no GF server. The grammar has no recursion, so it
-has exactly 2052 complete sentences; `npm run precompute` asks GF for every
-one of them and stores GF's bracketed output in `public/static/`. The page
-then looks up the tree you build instead of calling GF. Incomplete trees are
+has exactly 16416 complete sentences (8 tenses × 2 polarities × 1026
+clauses); `npm run precompute` asks GF for every one of them and stores GF's
+bracketed output in `public/static/`, one file per tense. The page then looks
+up the tree you build instead of calling GF. Incomplete trees are
 previewed in the browser either way.
 
 ## Run
@@ -44,6 +45,20 @@ Worked trees can also be opened directly:
 
 If the RGL is somewhere other than `~/code/gf/gf-rgl/dist/alltenses`, set
 `GF_RGL_DIST` before building.
+
+## Tense
+
+`MkS : (Temp, Pol, Cl) → S`. `Temp` has eight leaves—present, past, future,
+conditional, and their perfects—built with the RGL's `mkTemp`. Below the
+linearizations, **Tense variations** shows the current tree with only its
+`Temp` leaf swapped, in all three languages; click a row to adopt it.
+
+GF's brackets attribute auxiliaries (*has*, *wird*, *ska*) to the clause, not
+to `Temp`, so `projection.ts` recovers the verb group: the first auxiliary (or
+the verb, if there is none) is the finite element and carries the tense label;
+perfects add `PERF` to the *have* auxiliary and `PTCP` to the participle.
+Agreement follows each language: English marks `3SG` only in the present,
+German's finite verb always agrees, and Swedish shows it as `∅`.
 
 ## Static build (GitHub Pages)
 

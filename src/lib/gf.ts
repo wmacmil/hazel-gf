@@ -34,34 +34,41 @@ export class HttpGfRuntime implements GfRuntime {
   }
 }
 
-/** Serves GF output precomputed by scripts/precompute.mjs; no GF server needed. */
+/** Serves GF output precomputed by scripts/precompute.mjs, one shard per tense; no GF server needed. */
 export class StaticGfRuntime implements GfRuntime {
   readonly label = 'GF 3.11 · precomputed'
-  private table?: Promise<Record<string, RawLinearization[]>>
+  private readonly shards = new Map<string, Promise<Record<string, RawLinearization[]>>>()
 
   constructor(private readonly baseUrl = `${import.meta.env.BASE_URL}static/`) {}
 
   async loadGrammar(): Promise<unknown> {
     const response = await fetch(`${this.baseUrl}grammar.json`)
     if (!response.ok) throw new Error(`grammar.json request failed (${response.status})`)
-    await this.linearizations()
     return response.json()
   }
 
   async linearize(term: string, root: Node, revision: number): Promise<LinearizationProjection[]> {
-    const raw = (await this.linearizations())[term]
+    const raw = (await this.shard(tenseOf(term)))[term]
     if (!raw) throw new Error(`No precomputed linearization for ${term}`)
     return project(raw, root, revision)
   }
 
-  private linearizations(): Promise<Record<string, RawLinearization[]>> {
-    this.table ??= fetch(`${this.baseUrl}linearizations.json`).then(response => {
-      if (!response.ok) throw new Error(`linearizations.json request failed (${response.status})`)
-      return response.json() as Promise<Record<string, RawLinearization[]>>
-    })
-    return this.table
+  private shard(tense: string): Promise<Record<string, RawLinearization[]>> {
+    let shard = this.shards.get(tense)
+    if (!shard) {
+      shard = fetch(`${this.baseUrl}linearizations-${tense}.json`).then(response => {
+        if (!response.ok) throw new Error(`linearizations-${tense}.json request failed (${response.status})`)
+        return response.json() as Promise<Record<string, RawLinearization[]>>
+      })
+      shard.catch(() => this.shards.delete(tense))
+      this.shards.set(tense, shard)
+    }
+    return shard
   }
 }
+
+/** A complete term is `MkS <Temp> <Pol> (...)`; the Temp constructor names its shard. */
+export const tenseOf = (term: string) => term.split(' ')[1]
 
 export function createRuntime(): GfRuntime {
   return import.meta.env.VITE_GF_MODE === 'static' ? new StaticGfRuntime() : new HttpGfRuntime()

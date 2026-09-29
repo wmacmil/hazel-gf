@@ -1,8 +1,9 @@
 // Precompute every complete S tree's GF linearization so the editor can run
 // as a static site (GitHub Pages) with no GF server. The grammar has no
-// recursion, so the set of complete trees is finite (2052 today).
+// recursion, so the set of complete trees is finite (16416 today). Output is
+// sharded by tense (the MkS Temp argument) so a page loads one shard at a time.
 import { spawn, execFileSync } from 'node:child_process'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -35,8 +36,10 @@ async function waitForServer() {
 try {
   await waitForServer()
   const grammar = await (await fetch(`${base}?command=grammar`)).json()
-  const table = {}
+  const shards = {}
   for (const tree of trees) {
+    const tense = tree.split(' ')[1]
+    const table = (shards[tense] ??= {})
     const response = await fetch(`${base}?${new URLSearchParams({ command: 'linearize', tree })}`)
     if (!response.ok) throw new Error(`linearize failed (${response.status}) for ${tree}`)
     const raw = await response.json()
@@ -44,10 +47,14 @@ try {
       .map(({ to, text, brackets }) => ({ to, text, brackets }))
     if (table[tree].length !== languages.size) throw new Error(`missing languages for ${tree}`)
   }
+  rmSync(outDir, { recursive: true, force: true })
   mkdirSync(outDir, { recursive: true })
   writeFileSync(resolve(outDir, 'grammar.json'), JSON.stringify(grammar))
-  writeFileSync(resolve(outDir, 'linearizations.json'), JSON.stringify(table))
-  console.log(`precomputed ${trees.length} trees × ${languages.size} languages → public/static/`)
+  for (const [tense, table] of Object.entries(shards)) {
+    writeFileSync(resolve(outDir, `linearizations-${tense}.json`), JSON.stringify(table))
+  }
+  writeFileSync(resolve(outDir, 'index.json'), JSON.stringify({ shards: Object.keys(shards).sort(), trees: trees.length }))
+  console.log(`precomputed ${trees.length} trees × ${languages.size} languages in ${Object.keys(shards).length} tense shards → public/static/`)
 } finally {
   gf.kill('SIGTERM')
 }

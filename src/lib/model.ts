@@ -1,4 +1,4 @@
-export const CATEGORIES = ['S', 'Cl', 'NP', 'VP', 'CN', 'N', 'V', 'V2', 'Det', 'Pron', 'Pol'] as const
+export const CATEGORIES = ['S', 'Cl', 'NP', 'VP', 'CN', 'N', 'V', 'V2', 'Det', 'Pron', 'Pol', 'Temp'] as const
 export type CategoryId = (typeof CATEGORIES)[number]
 export type NodeId = string
 export type ConstructorId = string
@@ -23,7 +23,7 @@ export type Node = HoleNode | ApplyNode
 
 export type EditorDocument = {
   schemaVersion: 1
-  grammar: { name: 'HazelGF'; fingerprint: 'hazel-gf-v1' }
+  grammar: { name: 'HazelGF'; fingerprint: 'hazel-gf-v2' }
   startCategory: 'S'
   root: Node
   focus: NodeId
@@ -61,6 +61,7 @@ export const CATEGORY_COLORS: Record<CategoryId, { ink: string; wash: string }> 
   Det: { ink: '#8b4e00', wash: '#f8eaca' },
   Pron: { ink: '#6b43a5', wash: '#eee5fa' },
   Pol: { ink: '#a22f5c', wash: '#f8e1eb' },
+  Temp: { ink: '#5b4a9e', wash: '#ebe7f8' },
 }
 
 export const languageLabels: Record<LanguageId, string> = {

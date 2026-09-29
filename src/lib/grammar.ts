@@ -4,7 +4,7 @@ const c = (id: ConstructorId, label: string, inputs: CategoryId[], output: Categ
   ({ id, label, inputs, output })
 
 export const CONSTRUCTORS: Constructor[] = [
-  c('MkS', 'sentence', ['Pol', 'Cl'], 'S'),
+  c('MkS', 'sentence', ['Temp', 'Pol', 'Cl'], 'S'),
   c('PredVP', 'predicate', ['NP', 'VP'], 'Cl'),
   c('UseV', 'intransitive phrase', ['V'], 'VP'),
   c('ComplV2', 'transitive phrase', ['V2', 'NP'], 'VP'),
@@ -12,6 +12,10 @@ export const CONSTRUCTORS: Constructor[] = [
   c('UseN', 'common noun', ['N'], 'CN'),
   c('UsePron', 'pronoun phrase', ['Pron'], 'NP'),
   c('Positive', 'positive', [], 'Pol'), c('Negative', 'negative', [], 'Pol'),
+  c('Present', 'present', [], 'Temp'), c('Past', 'past', [], 'Temp'),
+  c('Future', 'future', [], 'Temp'), c('Conditional', 'conditional', [], 'Temp'),
+  c('PresentPerfect', 'present perfect', [], 'Temp'), c('PastPerfect', 'past perfect', [], 'Temp'),
+  c('FuturePerfect', 'future perfect', [], 'Temp'), c('ConditionalPerfect', 'conditional perfect', [], 'Temp'),
   c('Definite', 'the / definite', [], 'Det'), c('Indefinite', 'a / indefinite', [], 'Det'),
   c('IPron', 'I', [], 'Pron'), c('YouPron', 'you', [], 'Pron'),
   c('HePron', 'he', [], 'Pron'), c('ShePron', 'she', [], 'Pron'),

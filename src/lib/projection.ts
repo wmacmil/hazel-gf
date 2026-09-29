@@ -66,6 +66,73 @@ const swedishDefinite: Record<string, [string, string]> = {
   DogN: ['hund', 'en'], CatN: ['katt', 'en'], BookN: ['bok', 'en'],
 }
 
+const NEGATION: Record<LanguageId, RegExp> = {
+  HazelGFEng: /^(not|\w+n't)$/i, HazelGFGer: /^nicht$/i, HazelGFSwe: /^inte$/i,
+}
+const isNegationWord = (language: LanguageId, text: string) => NEGATION[language].test(text)
+const isBareNegation = (language: LanguageId, text: string) =>
+  isNegationWord(language, text) && !/\w+n't$/i.test(text)
+
+/** Tense label carried by the finite element, and whether the tense is anterior (perfect). */
+const TENSES: Record<string, { label: string; perfect: boolean }> = {
+  Present: { label: 'PRES', perfect: false }, Past: { label: 'PAST', perfect: false },
+  Future: { label: 'FUT', perfect: false }, Conditional: { label: 'COND', perfect: false },
+  PresentPerfect: { label: 'PRES', perfect: true }, PastPerfect: { label: 'PAST', perfect: true },
+  FuturePerfect: { label: 'FUT', perfect: true }, ConditionalPerfect: { label: 'COND', perfect: true },
+}
+
+const THIRD_SINGULAR = ['HePron', 'ShePron', 'ManN', 'WomanN', 'HouseN', 'DogN', 'CatN', 'BookN']
+
+function link(segment: LinearizedSegment, node: Node, feature: string) {
+  if (!segment.realizedBy.includes(node.id)) segment.realizedBy.push(node.id)
+  if (!segment.categories.includes(outputOf(node))) segment.categories.push(outputOf(node))
+  if (!segment.featureValues.includes(feature)) segment.featureValues.push(feature)
+}
+
+/**
+ * GF attributes auxiliaries (has, wird, ska, didn't) to structural nodes such as
+ * PredVP, never to the Temp node, so tense and agreement are recovered here:
+ * the finite element is the first auxiliary, or the lexical verb when there is none.
+ */
+function annotateVerbGroup(language: LanguageId, root: Node, segments: LinearizedSegment[]) {
+  const pred = findApply(root, 'PredVP')[0]
+  if (!pred) return
+  const [subject, vp] = pred.children
+  const verb = preorder(vp).find(node => node.kind === 'apply' && (node.output === 'V' || node.output === 'V2'))
+  const verbSegment = verb && segments.find(item => item.realizedBy.includes(verb.id))
+  if (!verb || !verbSegment) return
+
+  const temp = findApply(root, 'MkS')[0]?.children[0]
+  const tense = temp?.kind === 'apply' ? TENSES[temp.constructor] : undefined
+  // realizedBy[0] is GF's own bracket attribution; later entries were added by annotation.
+  const structural = new Set(preorder(root).filter(node => node.kind === 'apply' && node.children.length).map(node => node.id))
+  const auxiliaries = segments.filter(segment => segment.role === 'overt' && structural.has(segment.realizedBy[0]) &&
+    !isBareNegation(language, segment.text))
+  const finite = auxiliaries[0] ?? verbSegment
+
+  if (tense && temp) {
+    link(finite, temp, tense.label)
+    if (tense.perfect) {
+      link(auxiliaries.find(segment => segment !== finite) ?? finite, temp, 'PERF')
+      link(verbSegment, temp, 'PTCP')
+    }
+  } else {
+    finite.featureValues.push('PRES')
+  }
+
+  const subjectHead = preorder(subject).find(node => node.kind === 'apply' && THIRD_SINGULAR.includes(node.constructor))
+  if (!subjectHead) return
+  if (language === 'HazelGFSwe') {
+    segments.splice(segments.indexOf(finite) + 1, 0, {
+      id: `${language}-zero-3sg`, text: '∅', role: 'zero',
+      realizedBy: [subjectHead.id, verb.id], categories: [outputOf(verb)],
+      featureValues: ['3SG'],
+    })
+  } else if (language === 'HazelGFGer' || !tense || tense.label === 'PRES') {
+    finite.featureValues.push('3SG')
+  }
+}
+
 function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[]): LinearizedSegment[] {
   let result = segments.map(segment => ({ ...segment, realizedBy: [...segment.realizedBy], categories: [...segment.categories], featureValues: [...segment.featureValues] }))
 
@@ -78,11 +145,8 @@ function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[
     if (segment && !segment.featureValues.includes('INDEF')) segment.featureValues.push('INDEF')
   }
   for (const pol of findApply(root, 'Negative')) {
-    const negativeWords: Record<LanguageId, string[]> = {
-      HazelGFEng: ["doesn't", "don't", 'not'], HazelGFGer: ['nicht'], HazelGFSwe: ['inte'],
-    }
     const segment = result.find(item => item.realizedBy.includes(pol.id))
-      ?? result.find(item => negativeWords[language].includes(item.text.toLocaleLowerCase()))
+      ?? result.find(item => isNegationWord(language, item.text))
     if (segment) {
       if (!segment.realizedBy.includes(pol.id)) segment.realizedBy.push(pol.id)
       if (!segment.categories.includes('Pol')) segment.categories.unshift('Pol')
@@ -107,35 +171,7 @@ function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[
     }
   }
 
-  const pred = findApply(root, 'PredVP')[0]
-  if (pred) {
-    const [subject, vp] = pred.children
-    const subjectHead = preorder(subject).find(node => node.kind === 'apply' &&
-      ['HePron', 'ShePron', 'ManN', 'WomanN', 'HouseN', 'DogN', 'CatN', 'BookN'].includes(node.constructor))
-    const verb = preorder(vp).find(node => node.kind === 'apply' && (node.output === 'V' || node.output === 'V2'))
-    if (subjectHead && verb) {
-      const verbSegment = result.find(item => item.realizedBy.includes(verb.id))
-      if (verbSegment) {
-        const negative = findApply(root, 'Negative')[0]
-        const englishAux = language === 'HazelGFEng' && negative
-          ? result.find(item => item.realizedBy.includes(negative.id))
-          : undefined
-        if (englishAux) {
-          englishAux.featureValues.push('PRES', '3SG')
-        } else {
-          verbSegment.featureValues.push('PRES')
-        }
-        if (language === 'HazelGFSwe') {
-          result.splice(result.indexOf(verbSegment) + 1, 0, {
-            id: `${language}-zero-3sg`, text: '∅', role: 'zero',
-            realizedBy: [subjectHead.id, verb.id], categories: [outputOf(verb)], featureValues: ['3SG'],
-          })
-        } else if (!englishAux) {
-          verbSegment.featureValues.push('3SG')
-        }
-      }
-    }
-  }
+  annotateVerbGroup(language, root, result)
   return result
 }
 
