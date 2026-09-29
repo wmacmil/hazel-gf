@@ -1,6 +1,7 @@
 <script lang="ts">
   import { useSvelteFlow } from '@xyflow/svelte'
   import { DEFAULT_CAMERA, cameraGoalForNode, cameraTarget } from '../lib/nav/graph-theory'
+  import { FLOW_MIN_ZOOM } from '../lib/layout'
 
   /**
    * The camera follows keyboard focus only (docconfig graph-interaction theory §4):
@@ -30,6 +31,6 @@
   $effect(() => {
     if (fitSeq === fitted) return
     fitted = fitSeq
-    void flow.fitView({ padding: 0.12, duration: 160 })
+    void flow.fitView({ padding: 0.12, duration: 160, minZoom: FLOW_MIN_ZOOM })
   })
 </script>

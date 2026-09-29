@@ -1,5 +1,6 @@
 <script lang="ts">
   import { useNodesInitialized, useSvelteFlow } from '@xyflow/svelte'
+  import { FLOW_MIN_ZOOM } from '../lib/layout'
 
   /**
    * Fit the scene on entry and when a different tree is loaded (`key` = the root's id),
@@ -17,6 +18,7 @@
     if (!initialized.current || current === fitted) return
     fitted = current
     // Two frames: the rebuilt nodes are measured before the viewport is fitted.
-    requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.12, duration: 150 })))
+    // Never below FLOW_MIN_ZOOM: a large tree overflows and is panned (the camera follows keys) rather than shrunk illegible.
+    requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.12, duration: 150, minZoom: FLOW_MIN_ZOOM })))
   })
 </script>

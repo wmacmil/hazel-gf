@@ -11,7 +11,15 @@ export function sentenceWidth(projection: LinearizationProjection): number {
   return 1.05 * (words.reduce((total, word) => total + word, 0) + GAP * Math.max(0, words.length - 1))
 }
 
-export const SCALE = { min: 0.55, max: 2 }
+/**
+ * Sentence text scales within [min, max] of the base 17px serif. The ceiling is
+ * tied to the operad view (TYPE_RATIO): at its fitted zoom the flow's operation
+ * names render at ≥ 0.95rem × FLOW_MIN_ZOOM, and sentences stay within a fixed
+ * ratio of that, so the two projections read as one type scale.
+ */
+export const FLOW_MIN_ZOOM = 0.75
+export const TYPE_RATIO = 1.6
+export const SCALE = { min: 0.55, max: Math.round(((15.2 * FLOW_MIN_ZOOM * TYPE_RATIO) / 17) * 100) / 100 }
 const clamp = (value: number) => Math.min(SCALE.max, Math.max(SCALE.min, value))
 
 /**

@@ -29,7 +29,7 @@ try {
     return { x: +match[1], y: +match[2], zoom: +match[3] }
   })
   const focusedInFlow = () => page.locator('.svelte-flow__node .card.focused code').innerText()
-  const focusedInTree = () => page.evaluate(() => document.querySelector('.algebra-row.active-line .box.lit b')?.parentElement?.querySelector('.name')?.textContent ?? null)
+  const focusedInTree = () => page.evaluate(() => document.querySelector('.algebra-row.active-line .box.lit .name')?.textContent ?? null)
   const activeWords = () => page.evaluate(() => [...document.querySelectorAll('.algebra-row.active-line .word.active')].map(word => [...word.querySelectorAll('.piece .text')].map(text => text.textContent).join('')))
   const settle = () => page.waitForTimeout(350)
 
@@ -85,6 +85,20 @@ try {
   expect('] → next language row', await page.locator('.algebra-row.active-line .language strong').innerText(), 'Deutsch')
   await page.keyboard.press('j'); await page.keyboard.press('d'); await settle()
   expect('German: j into DetCN, d to the next word', await activeWords(), ['Mann'])
+
+  // 3b. h/l mean the same in both trees (structural: same level, reading order),
+  // including on a box spanning the whole sentence (PredVP).
+  for (const region of ['sentence', 'tree']) {
+    // Focus PredVP through its phrase box (always on screen), then enter the region under test.
+    await page.locator('.algebra-row.active-line .box', { has: page.locator('.name', { hasText: /^PredVP$/ }) }).first().click(); await settle()
+    if ((await page.locator('.region-chip b').innerText()).toLowerCase() !== region) await page.keyboard.press('Tab')
+    await page.keyboard.press('h'); await settle()
+    expect(`${region}: h on PredVP → the node before it on its level`, await focusedInFlow(), 'Negative')
+    await page.keyboard.press('l'); await settle()
+    expect(`${region}: l back → PredVP`, await focusedInFlow(), 'PredVP')
+    await page.keyboard.press('j'); await page.keyboard.press('l'); await page.keyboard.press('l'); await settle()
+    expect(`${region}: j then l l → across cousins, stopping at the level's end`, await focusedInFlow(), 'UseV')
+  }
 
   // 4. Typing in an input never navigates.
   await page.getByLabel('Sentence to parse').click()

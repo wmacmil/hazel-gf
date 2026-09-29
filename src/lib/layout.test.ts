@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { columnFit, fitScale, sentenceWidth } from './layout'
+import { SCALE, columnFit, fitScale, sentenceWidth } from './layout'
 import type { LinearizationProjection } from './model'
 
 const sentence = (...words: string[]): LinearizationProjection => ({
@@ -29,7 +29,8 @@ describe('sentences are as wide as they are long', () => {
     expect(total * scale + 24 * 2).toBeLessThanOrEqual(700 + 0.5)
     expect(scale).toBeGreaterThan(1)
     expect(fitScale(800, 400)).toBe(0.55)           // floor: very long rows shrink, then scroll
-    expect(fitScale(300, 330)).toBeCloseTo(1.1)
-    expect(fitScale(300, 2000)).toBe(2)            // ceiling: short text grows, within reason
+    expect(fitScale(300, 315)).toBeCloseTo(1.05)
+    expect(fitScale(300, 2000)).toBe(SCALE.max)    // ceiling: tied to the operad view's type (TYPE_RATIO)
+    expect(SCALE.max).toBeLessThan(1.2)
   })
 })

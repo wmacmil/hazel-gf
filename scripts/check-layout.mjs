@@ -72,6 +72,12 @@ try {
         }
         try { await page.locator('.algebra-row .box').first().hover({ timeout: 2000 }) } catch { failures.push(`${where}: S box cannot be hovered`) }
         for (const problem of await page.evaluate(clippedOutlines)) failures.push(`${where}: hover S box: ${problem}`)
+        // One baseline: every morpheme's text in a sentence sits at the same height.
+        const wobble = await page.evaluate(() => [...document.querySelectorAll('.algebra-row')].map(row => {
+          const tops = [...row.querySelectorAll('.grid > .cell .piece .text')].map(text => text.getBoundingClientRect().top)
+          return Math.max(...tops) - Math.min(...tops)
+        }))
+        wobble.forEach((spread, index) => { if (spread > 1) failures.push(`${where}: row ${index + 1} text wobbles ${spread.toFixed(1)}px off one baseline`) })
         for (const [index, row] of (await page.evaluate(rows)).entries()) {
           if (lines !== 'columns' && row.overflow > 0 && row.zoom > 0.56) failures.push(`${where}: row ${index + 1} overflows ${row.overflow}px at scale ${row.zoom}`)
         }

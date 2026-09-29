@@ -26,7 +26,7 @@ One focused node, two regions (`Tab` switches; clicking a pane selects it):
 
 | key | tree region (SvelteFlow operad) | sentence region (text + phrase boxes) |
 |---|---|---|
-| `h j k l` | hybrid-tree over the wiring diagram's layout: `k`/`j` parent/first child, `h`/`l` nearest card left/right | hybrid-tree over the phrase boxes: `k`/`j` enclosing box/first child, `h`/`l` the neighbouring constituent |
+| `h j k l` | `k`/`j` parent / first child; `h`/`l` previous / next node on the same tree level (siblings, then cousins) | identical — structural, so both trees always agree |
 | `s d` | previous/next word of the active sentence | same |
 | `[ ]` | previous/next language row | same |
 | `⌥h ⌥l ⌥k ⌥j` | structural parent/child/previous/next sibling, layout-independent | same |
@@ -36,6 +36,12 @@ Both trees draw the same focus, so they always move together; only the
 geometry that interprets a direction differs.
 
 ## Adaptations (and why)
+
+- **hjkl is structural in both trees** (`structural-v1` with a `level`
+  sequence, a documented addition). The first port interpreted h/l spatially
+  over each drawing, which made the two trees disagree and dead-ended where a
+  phrase box spans the whole sentence (PredVP). Spatial strategies remain in
+  `lib/nav/graph-theory.ts` for views where layout is the meaning.
 
 - **Edge half-plane** (`halfPlane: 'edge'`, a documented addition to the
   ported spatial algorithm): nested phrase boxes overlap their children, so a

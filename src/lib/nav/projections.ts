@@ -28,7 +28,18 @@ export function structureOf(root: Node): StructuralNavigationIndex {
   visit(root)
   const previous = new Map(order.slice(1).map((id, index) => [id, order[index]]))
   const next = new Map(order.slice(0, -1).map((id, index) => [id, order[index + 1]]))
-  return { roots: [root.id], focusable: new Set(order), parent, firstChild, previousSibling, nextSibling, previous, next }
+  // Each level in reading (preorder) order: the row a node sits on in both drawings.
+  const depth = new Map<string, number>([[root.id, 0]])
+  for (const id of order) if (parent.has(id)) depth.set(id, depth.get(parent.get(id)!)! + 1)
+  const previousOnLevel = new Map<string, string>()
+  const nextOnLevel = new Map<string, string>()
+  const levels = new Map<number, string[]>()
+  for (const id of order) levels.set(depth.get(id)!, [...(levels.get(depth.get(id)!) ?? []), id])
+  for (const row of levels.values()) row.forEach((id, index) => {
+    if (index > 0) previousOnLevel.set(id, row[index - 1])
+    if (index < row.length - 1) nextOnLevel.set(id, row[index + 1])
+  })
+  return { roots: [root.id], focusable: new Set(order), parent, firstChild, previousSibling, nextSibling, previous, next, previousOnLevel, nextOnLevel }
 }
 
 /** The wiring diagram's world geometry: the same tidy layout SvelteFlow draws. */

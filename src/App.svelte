@@ -20,7 +20,7 @@
   import { columnFit } from './lib/layout'
   import { PROFILES, keySpecOf, resolveKey, type CommandId, type Region } from './lib/nav/commands'
   import { resolveNavigation, type Direction, type GraphNavigationConfig, type StructuralMove } from './lib/nav/graph-theory'
-  import { boxGeometry, flowGeometry, stepWord, structureOf, type WordStop } from './lib/nav/projections'
+  import { flowGeometry, stepWord, structureOf, type WordStop } from './lib/nav/projections'
   import { CATEGORY_COLORS, type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
 
   const STORAGE_KEY = 'hazel-gf-document-v2'
@@ -184,8 +184,13 @@
   let fitSeq = $state(0)
   /** The s/d lane's own position (a word, not a tree node). */
   let wordStop: WordStop | undefined
-  const TREE_NAV: GraphNavigationConfig = { strategy: 'hybrid-tree-v1', spatialAlgorithm: 'css-nav-grid-v1', boundary: 'stop', structuralSequence: 'siblings' }
-  const BOX_NAV: GraphNavigationConfig = { ...TREE_NAV, halfPlane: 'edge' }
+  /**
+   * hjkl is structural in both trees, so they cannot disagree: j/k first child /
+   * parent, h/l the neighbouring node on the same level (siblings, then cousins).
+   * Spatial strategies depended on each drawing's geometry and dead-ended where
+   * a box spans the whole sentence (PredVP); they remain in lib/nav for other views.
+   */
+  const NAV: GraphNavigationConfig = { strategy: 'structural-v1', spatialAlgorithm: 'css-nav-grid-v1', boundary: 'stop', structuralSequence: 'level' }
   const activeProjection = $derived(projections[Math.min(activeLanguage, projections.length - 1)])
 
   function moveTo(target: NodeId | null | undefined) {
@@ -195,13 +200,12 @@
   }
 
   function navigate(intent: { kind: 'direction'; direction: Direction } | { kind: 'structure'; move: StructuralMove }) {
-    const sentenceTree = region === 'sentence' && activeProjection
     const decision = resolveNavigation({
       focusedId: document.focus,
       structure: structureOf(document.root),
-      geometry: sentenceTree ? boxGeometry(document.root, activeProjection) : flowGeometry(document.root),
+      geometry: flowGeometry(document.root),
       orientation: 'top-to-bottom',
-    }, intent, sentenceTree ? BOX_NAV : TREE_NAV)
+    }, intent, NAV)
     moveTo(decision?.targetId)
   }
 

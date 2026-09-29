@@ -72,7 +72,7 @@
           onclick={() => onFocus(box.node)}
           onmouseenter={() => onHover([box.node])}
           onmouseleave={() => onHover([])}
-        ><b>{box.category}</b><span class="name">{box.label}</span>{#if box.runs.length > 1}<i>{part + 1}/{box.runs.length}</i>{/if}</button>
+        ><span class="name">{box.label}</span><small class="sort">{box.category}</small>{#if box.runs.length > 1}<i>{part + 1}/{box.runs.length}</i>{/if}</button>
       {/each}
     {/each}
   </div>
@@ -107,9 +107,10 @@
     border: 1px solid color-mix(in srgb, var(--sort) 55%, transparent); border-radius: 3px;
     font: 500 .56rem/1.3 ui-monospace, monospace;
   }
-  .box b { flex: none; font-weight: 800; }
-  /* Narrow boxes keep the sort and shorten the name (full name in the tooltip), never clipping both ends. */
-  .box .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* The operation (PredVP) is the box; its sort is already the hairline colour, so it recedes.
+     Narrow boxes shorten the name (full name in the tooltip), never clipping both ends. */
+  .box .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 800; }
+  .box .sort { flex: none; font-size: .85em; opacity: .55; }
   .box i { flex: none; font-style: normal; opacity: .65; }
   .box.split { border-style: dashed; }
   .box:hover, .box.lit { outline: 2px solid #1d1b18; outline-offset: 1px; }

@@ -20,8 +20,12 @@ export interface GraphNavigationConfig {
   readonly strategy: NavigationStrategyId
   readonly spatialAlgorithm: SpatialAlgorithmId
   readonly boundary: 'stop' | 'wrap'
-  /** What previous/next mean structurally: siblings, or preorder. */
-  readonly structuralSequence: 'siblings' | 'preorder'
+  /**
+   * What previous/next mean structurally: siblings, preorder, or (hazel-gf
+   * addition) `level` — the neighbouring node on the same tree level in reading
+   * order, siblings first and then cousins, so h/l never dead-ends mid-row.
+   */
+  readonly structuralSequence: 'siblings' | 'preorder' | 'level'
   /**
    * hazel-gf addition. `center` (the original): a candidate is in the half-plane
    * if its centre is. `edge` (the W3C spatial-navigation rule): it must lie beyond
@@ -40,6 +44,8 @@ export interface StructuralNavigationIndex {
   readonly nextSibling: ReadonlyMap<string, string>
   readonly previous: ReadonlyMap<string, string>
   readonly next: ReadonlyMap<string, string>
+  readonly previousOnLevel?: ReadonlyMap<string, string>
+  readonly nextOnLevel?: ReadonlyMap<string, string>
 }
 
 export interface NavigationContext {
@@ -69,7 +75,9 @@ function structuralMove(context: NavigationContext, move: StructuralMove, config
   if (move === 'first-child') return structure.firstChild.get(focusedId) ?? null
   const map = config.structuralSequence === 'siblings'
     ? move === 'previous' ? structure.previousSibling : structure.nextSibling
-    : move === 'previous' ? structure.previous : structure.next
+    : config.structuralSequence === 'level' && structure.previousOnLevel && structure.nextOnLevel
+      ? move === 'previous' ? structure.previousOnLevel : structure.nextOnLevel
+      : move === 'previous' ? structure.previous : structure.next
   return map.get(focusedId) ?? null
 }
 

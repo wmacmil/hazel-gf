@@ -33,7 +33,8 @@
       onclick={() => piece.features.length && onPin ? onPin(piece.features) : onFocus?.(piece.realizedBy[0])}
     >
       <span class="text">{piece.role === 'zero' ? '∅' : piece.text}</span>
-      {#if piece.features.length}<small>{piece.features.join('·')}</small>{/if}
+      <!-- Always present (empty when featureless) so every word's text sits on one baseline. -->
+      <small aria-hidden={!piece.features.length}>{piece.features.length ? piece.features.join('·') : '\u00a0'}</small>
     </button>
   {/each}
 </span>
@@ -48,7 +49,7 @@
   .word.active { outline: 2px solid #1d1b18; outline-offset: 2px; }
   .word.hole { border-style: dashed; }
   .piece {
-    display: inline-flex; flex-direction: column; align-items: center; justify-content: end; gap: .12rem;
+    display: inline-flex; flex-direction: column; align-items: center; justify-content: start; gap: .12rem;
     padding: .2rem .24rem .16rem; border: 0; border-radius: .28rem; cursor: pointer;
     color: var(--m-ink, #26231e); background: var(--m-wash, transparent);
     font: 600 1.08rem/1 Georgia, 'Iowan Old Style', serif;
@@ -59,7 +60,7 @@
   .piece.changed-stem .text { text-decoration: underline wavy color-mix(in srgb, var(--m-ink, #26231e) 70%, transparent); text-underline-offset: .22em; }
   .piece.zero { min-width: 1.2rem; background: transparent; border: 1px dashed var(--m-ink, #8a8175); color: var(--m-ink, #8a8175); font-weight: 400; }
   .piece.pinned { box-shadow: inset 0 0 0 2px #1d1b18; }
-  .piece small { font: 700 .46rem/1 ui-monospace, monospace; letter-spacing: .03em; color: var(--m-ink, #6f675c); }
+  .piece small { min-height: 1em; font: 700 .46rem/1 ui-monospace, monospace; letter-spacing: .03em; color: var(--m-ink, #6f675c); }
   .compact .piece { padding: .1rem .16rem; font-size: .86rem; }
   .compact .piece small { font-size: .4rem; }
 </style>
