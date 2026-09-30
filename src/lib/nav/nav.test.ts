@@ -108,3 +108,22 @@ describe('key profile', () => {
     expect(resolveKey(profile, 'sentence', 'x')).toBeNull()
   })
 })
+
+describe('hjkl over the builder’s fragments (a forest)', () => {
+  const STRUCTURAL: GraphNavigationConfig = { strategy: 'structural-v1', spatialAlgorithm: 'css-nav-grid-v1', boundary: 'stop', structuralSequence: 'level' }
+  const a = fromGfTerm('UseN ManN'), b = fromGfTerm('UseV SleepV')
+  const forest = [a, b]
+  const step = (from: string, direction: Direction) =>
+    resolveNavigation({ focusedId: from, structure: structureOf(forest), geometry: { rects: new Map() }, orientation: 'top-to-bottom' }, { kind: 'direction', direction }, STRUCTURAL)?.targetId
+  it('walks down and up within a fragment', () => {
+    expect(step(a.id, 'south')).toBe((a as ApplyNode).children[0].id)
+    expect(step((a as ApplyNode).children[0].id, 'north')).toBe(a.id)
+  })
+  it('crosses between fragments at the same depth', () => {
+    expect(step(a.id, 'east')).toBe(b.id)
+    expect(step((b as ApplyNode).children[0].id, 'west')).toBe((a as ApplyNode).children[0].id)
+  })
+  it('starts at the first fragment when nothing is focused', () => {
+    expect(resolveNavigation({ focusedId: null, structure: structureOf(forest), geometry: { rects: new Map() }, orientation: 'top-to-bottom' }, { kind: 'direction', direction: 'south' }, STRUCTURAL)?.targetId).toBe(a.id)
+  })
+})

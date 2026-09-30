@@ -1,11 +1,13 @@
 <script lang="ts">
   import { Handle, Position, type NodeProps } from '@xyflow/svelte'
   import OperadCard from './OperadCard.svelte'
+  import { getContext } from 'svelte'
   import { sortColor } from '../lib/palette.svelte'
   import type { CategoryId, Node } from '../lib/model'
 
   type Data = { node: Node; inputs: CategoryId[]; fragmentRoot: boolean; adoptable: boolean; onAdopt: () => void; onRemove: () => void }
   let { data }: NodeProps & { data: Data } = $props()
+  const highlight = getContext<{ focus: string | undefined }>('builder-focus')
   const sort = $derived(data.node.kind === 'hole' ? data.node.expected : data.node.output)
 </script>
 
@@ -19,7 +21,7 @@
       <button onclick={data.onRemove} title="Remove this fragment">×</button>
     </div>
   {/if}
-  <OperadCard node={data.node} />
+  <OperadCard node={data.node} focused={highlight.focus === data.node.id} />
   {#each data.inputs as input, port (port)}
     <Handle type="target" id={`in-${port}`} position={Position.Bottom} class="port-handle"
       style={`left:${((port + 1) / (data.inputs.length + 1)) * 100}%;--port:${sortColor(input).abstract.accent}`} />

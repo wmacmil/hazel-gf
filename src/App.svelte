@@ -234,17 +234,28 @@
   const NAV: GraphNavigationConfig = { strategy: 'structural-v1', spatialAlgorithm: 'css-nav-grid-v1', boundary: 'stop', structuralSequence: 'level' }
   const activeProjection = $derived(projections[Math.min(activeLanguage, projections.length - 1)])
 
+  /** In the builder the tree region walks the bench's fragments, with a focus of its own. */
+  let benchFocus = $state<NodeId>()
+  const onBench = $derived(settings.operad === 'builder' && region === 'tree')
+
   function moveTo(target: NodeId | null | undefined) {
-    if (!target || !findNode(document.root, target)) return
-    focus(target)
+    if (!target) return
+    if (onBench) {
+      if (!bench.fragments.some(fragment => findNode(fragment, target))) return
+      benchFocus = target
+    } else {
+      if (!findNode(document.root, target)) return
+      focus(target)
+    }
     camera = { nodeId: target, seq: (camera?.seq ?? 0) + 1 }
   }
 
   function navigate(intent: { kind: 'direction'; direction: Direction } | { kind: 'structure'; move: StructuralMove }) {
     const decision = resolveNavigation({
-      focusedId: document.focus,
-      structure: structureOf(document.root),
-      geometry: flowGeometry(document.root),
+      focusedId: onBench ? benchFocus ?? null : document.focus,
+      structure: structureOf(onBench ? bench.fragments : document.root),
+      // Structural navigation reads no geometry; the builder's is wherever fragments were dragged.
+      geometry: onBench ? { rects: new Map() } : flowGeometry(document.root),
       orientation: 'top-to-bottom',
     }, intent, NAV)
     moveTo(decision?.targetId)
@@ -462,7 +473,7 @@
         {#if settings.operad === 'builder'}
           <div class="flow-panel">
             <span class="surface-label operad-label">operad · builder (after Operad14)</span>
-            <BuilderCanvas {bench} {paradigms} onChange={next => bench = next} onAdopt={adopt} onSendSentence={sendSentence} />
+            <BuilderCanvas {bench} {paradigms} focus={benchFocus} {camera} {fitSeq} onFocus={id => benchFocus = id} onChange={next => bench = next} onAdopt={adopt} onSendSentence={sendSentence} />
           </div>
         {:else if settings.operad === 'flow'}
           <div class="flow-panel">

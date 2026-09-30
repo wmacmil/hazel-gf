@@ -114,7 +114,9 @@ try {
   truthy('search: "exist" in an S hole offers MkS › ExistNP', (await find('exist')).includes('MkS › ExistNP'))
   await page.locator('aside .choice', { has: page.locator('code', { hasText: /^Present$/ }) }).click(); await settle()
   await page.locator('aside .choice', { has: page.locator('code', { hasText: /^Positive$/ }) }).click(); await settle()
+  const beforeInsert = await viewport()
   truthy('search: "red" in an NP hole reaches DetCN › AdjCN › PositA › RedA', (await find('red')).includes('DetCN › AdjCN › PositA › RedA'))
+  expect('inserting an expression never moves the camera', await viewport(), beforeInsert)
   truthy('search: signature -> Det offers determiners', (await find('-> Det')).includes('Det'))
   truthy('search: a word in any language (Vogel)', (await find('Vogel')).includes('Vogel'))
   await page.waitForTimeout(600)
@@ -128,6 +130,13 @@ try {
   await page.getByRole('button', { name: '+ current sentence' }).click(); await settle()
   await page.locator('.builder .svelte-flow__controls-fitview').click(); await page.waitForTimeout(400)
   expect('builder: the sentence arrives as one fragment', await status(), '1 fragment · 0 open holes')
+  // hjkl walks the bench like the flow view walks the sentence.
+  const benchFocus = () => page.evaluate(() => document.querySelector('.builder .card.focused')?.closest('.operation')?.dataset.op ?? null)
+  await page.locator('.builder .svelte-flow__node').first().click(); await settle()
+  expect('builder: clicking a node focuses it', await benchFocus(), 'MkS')
+  const walk = []
+  for (const key of ['j', 'l', 'l', 'j', 'l', 'h', 'k', 'k']) { await page.keyboard.press(key); await settle(); walk.push(await benchFocus()) }
+  expect('builder: hjkl walks the fragment', walk.join(' '), 'Present Negative PredVP DetCN UseV DetCN PredVP MkS')
   const wires = await page.locator('.builder .svelte-flow__edge').count()
   expect('builder: every child is wired to its parent', wires, (await page.locator('.builder .svelte-flow__node').count()) - 1)
   await page.evaluate(() => [...document.querySelectorAll('.builder .svelte-flow__edge')].at(-1).dispatchEvent(new MouseEvent('click', { bubbles: true }))); await settle()
@@ -149,8 +158,17 @@ try {
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 12 }); await page.mouse.up(); await settle()
   expect('builder: dragging the fragment back onto its hole re-plugs it', await status(), '1 fragment · 0 open holes')
   // A wrong sort is refused with the kernel's reason.
+  const beforeAdd = await viewport()
   await page.getByLabel('Add a fragment').fill('UseV'); await page.waitForTimeout(200)
   await page.getByLabel('Add a fragment').press('Enter'); await settle()
+  expect('builder: adding a fragment never moves the camera', await viewport(), beforeAdd)
+  const added = await page.evaluate(() => {
+    const canvas = document.querySelector('.builder').getBoundingClientRect()
+    const node = [...document.querySelectorAll('.builder .svelte-flow__node')].find(n => n.querySelector('.operation')?.dataset.op === 'UseV' && n.querySelector('.toolbar'))
+    const box = node?.getBoundingClientRect()
+    return { visible: !!box && box.left >= canvas.left && box.right <= canvas.right && box.top >= canvas.top && box.bottom <= canvas.bottom, focused: !!node?.querySelector('.card.focused') }
+  })
+  expect('builder: a new fragment appears in view and takes focus', added, { visible: true, focused: true })
   await page.locator('.builder .svelte-flow__controls-fitview').click(); await page.waitForTimeout(400)
   const useV = await page.evaluate(() => [...document.querySelectorAll('.builder .svelte-flow__node')].find(n => n.querySelector('.operation')?.dataset.op === 'UseV' && n.querySelector('.toolbar'))?.dataset.id)
   const detCn = await page.evaluate(() => [...document.querySelectorAll('.builder .svelte-flow__node')].find(n => n.querySelector('.operation')?.dataset.op === 'DetCN')?.dataset.id)

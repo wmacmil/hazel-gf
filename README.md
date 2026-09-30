@@ -97,7 +97,10 @@ Add a fragment by typed search (a name, a word, or `-> AP`); each comes with
 typed holes. Drag a fragment's top handle onto a hole's port to plug it in —
 the kernel (`src/lib/builder.ts: plugProblem`) refuses a wrong sort, a filled
 port, or a self-plug, and the canvas shows why. Click a wire to cut a subtree
-out into its own fragment (leaving a hole). `+ current sentence` copies the
+out into its own fragment (leaving a hole). hjkl walks the bench as it walks the
+sentence (j/k child/parent, h/l along a level, across fragments). A new
+fragment appears in the middle of the view and a cut subtree stays where it
+was, so adding or cutting never moves the camera. `+ current sentence` copies the
 document in; a complete `S` fragment can be adopted as the sentence. The
 bench persists in localStorage. `builder.test.ts` covers the kernel;
 `check-navigation.mjs` builds, cuts, re-plugs, refuses, and adopts in a

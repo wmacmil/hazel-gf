@@ -7,8 +7,14 @@ import { CARD, operadFlow } from '../flow'
 import type { LinearizationProjection, Node, NodeId } from '../model'
 import type { GraphGeometry, GraphRect, StructuralNavigationIndex } from './graph-theory'
 
-/** Parent, first child, siblings, and preorder neighbours of every node. */
-export function structureOf(root: Node): StructuralNavigationIndex {
+/**
+ * Parent, first child, siblings, and preorder neighbours of every node. A
+ * forest (the builder's fragments) is one index: each fragment is a root,
+ * preorder runs through them in turn, and a level spans every fragment, so
+ * h/l crosses from one fragment to the next at the same depth.
+ */
+export function structureOf(forest: Node | Node[]): StructuralNavigationIndex {
+  const roots = Array.isArray(forest) ? forest : [forest]
   const parent = new Map<string, string>()
   const firstChild = new Map<string, string>()
   const previousSibling = new Map<string, string>()
@@ -25,11 +31,11 @@ export function structureOf(root: Node): StructuralNavigationIndex {
       visit(child)
     })
   }
-  visit(root)
+  roots.forEach(visit)
   const previous = new Map(order.slice(1).map((id, index) => [id, order[index]]))
   const next = new Map(order.slice(0, -1).map((id, index) => [id, order[index + 1]]))
   // Each level in reading (preorder) order: the row a node sits on in both drawings.
-  const depth = new Map<string, number>([[root.id, 0]])
+  const depth = new Map<string, number>(roots.map(root => [root.id, 0]))
   for (const id of order) if (parent.has(id)) depth.set(id, depth.get(parent.get(id)!)! + 1)
   const previousOnLevel = new Map<string, string>()
   const nextOnLevel = new Map<string, string>()
@@ -39,7 +45,7 @@ export function structureOf(root: Node): StructuralNavigationIndex {
     if (index > 0) previousOnLevel.set(id, row[index - 1])
     if (index < row.length - 1) nextOnLevel.set(id, row[index + 1])
   })
-  return { roots: [root.id], focusable: new Set(order), parent, firstChild, previousSibling, nextSibling, previous, next, previousOnLevel, nextOnLevel }
+  return { roots: roots.map(root => root.id), focusable: new Set(order), parent, firstChild, previousSibling, nextSibling, previous, next, previousOnLevel, nextOnLevel }
 }
 
 /** The wiring diagram's world geometry: the same tidy layout SvelteFlow draws. */

@@ -3,11 +3,14 @@
   import '@xyflow/svelte/dist/style.css'
   import BuilderNode from './BuilderNode.svelte'
   import FitOnChange from './FitOnChange.svelte'
+  import CameraFollow from './CameraFollow.svelte'
+  import { setContext, untrack } from 'svelte'
   import { profile } from '../lib/grammar'
+  import { preorder } from '../lib/editor'
   import { adoptable, addFragment, detach, openHoles, plug, plugProblem, removeFragment, type Workbench } from '../lib/builder'
   import { CARD, operadFlow, portOf } from '../lib/flow'
   import type { Paradigms } from '../lib/morphology'
-  import type { Node } from '../lib/model'
+  import type { Node, NodeId } from '../lib/model'
   import { sortColor } from '../lib/palette.svelte'
   import { searchExpressions } from '../lib/search'
 
@@ -17,15 +20,24 @@
    * a matching hole (the kernel checks every wire), click a wire to cut it,
    * and adopt a finished sentence. Drag positions are an ephemeral overlay.
    */
-  let { bench, paradigms, onChange, onAdopt, onSendSentence }: {
+  let { bench, paradigms, focus, camera, fitSeq = 0, onFocus, onChange, onAdopt, onSendSentence }: {
     bench: Workbench
     paradigms: Paradigms | undefined
+    /** The bench's own keyboard focus (hjkl walks the fragments). */
+    focus: NodeId | undefined
+    camera?: { nodeId: string; seq: number }
+    fitSeq?: number
+    onFocus: (id: NodeId) => void
     onChange: (bench: Workbench) => void
     onAdopt: (fragment: Node) => void
     onSendSentence: () => void
   } = $props()
 
   const nodeTypes = { builder: BuilderNode }
+  let width = $state(0)
+  let height = $state(0)
+  // Focus reaches the cards through context, so moving it never rebuilds the nodes (or aborts a wire).
+  setContext('builder-focus', { get focus() { return focus } })
   let nodes = $state.raw<FlowNodeType[]>([])
   let edges = $state.raw<Edge[]>([])
   let dragged = $state<Record<string, { x: number; y: number }>>({})
@@ -33,17 +45,48 @@
   let query = $state('')
   const results = $derived(searchExpressions(query, undefined, paradigms, 10))
 
+  /**
+   * Where each fragment sits: its root's origin, fixed once it appears, so the
+   * bench never re-flows and the camera never has to chase it (it moves only
+   * on keyboard focus or `=`). A new fragment appears in the middle of the
+   * view; a cut subtree stays exactly where it was drawn. Not reactive: it is
+   * bookkeeping for the layout below, written only while laying out.
+   */
+  const origins = new Map<string, { x: number; y: number }>()
+  let viewport = { x: 0, y: 0, zoom: 1 }
+  /** The first layout is a bench restored from storage: laid side by side and fitted once. */
+  let restoring = true
+
+  /** Where a newly seen fragment's root goes, in flow coordinates. */
+  function originFor(fragment: Node, index: number) {
+    // Cut off an existing tree: the subtree's root stays where it was drawn.
+    const drawn = nodes.find(node => node.id === fragment.id)
+    if (drawn) return drawn.position
+    // Before the canvas has a viewport (a bench restored on load): side by side, then fitted once.
+    if (restoring || !width) return { x: index * 900, y: 0 }
+    // Otherwise centred horizontally, a third of the way down the visible canvas,
+    // cascading past any fragment already sitting there.
+    const spot = { x: (width / 2 - viewport.x) / viewport.zoom - CARD.width / 2, y: (height / 3 - viewport.y) / viewport.zoom }
+    const taken = [...origins.values()]
+    while (taken.some(origin => Math.abs(origin.x - spot.x) < 24 && Math.abs(origin.y - spot.y) < 24)) { spot.x += 32; spot.y += 32 }
+    return spot
+  }
+
   $effect(() => {
     const laidOut: FlowNodeType[] = []
     const wires: Edge[] = []
-    let offset = 0
-    for (const fragment of bench.fragments) {
+    const live = new Set(bench.fragments.map(fragment => fragment.id))
+    for (const id of origins.keys()) if (!live.has(id)) origins.delete(id)
+    bench.fragments.forEach((fragment, index) => {
       const flow = operadFlow(fragment)
-      const width = Math.max(...flow.nodes.map(node => node.position.x)) + CARD.width
+      const relative = new Map(flow.nodes.map(node => [node.id, node.position]))
+      if (!origins.has(fragment.id)) origins.set(fragment.id, untrack(() => originFor(fragment, index)))
+      const origin = origins.get(fragment.id)!
+      const rootAt = relative.get(fragment.id)!
       for (const node of flow.nodes) {
         laidOut.push({
           ...node, type: 'builder', draggable: true,
-          position: dragged[node.id] ?? { x: node.position.x + offset, y: node.position.y },
+          position: dragged[node.id] ?? { x: origin.x + node.position.x - rootAt.x, y: origin.y + node.position.y - rootAt.y },
           data: {
             node: node.data.node, inputs: node.data.inputs,
             fragmentRoot: node.id === fragment.id, adoptable: node.id === fragment.id && adoptable(fragment),
@@ -52,10 +95,10 @@
         })
       }
       for (const edge of flow.edges) wires.push({ ...edge, style: `stroke:${sortColor(edge.data.sort).abstract.accent};stroke-width:1.8;cursor:pointer` })
-      offset += width + 80
-    }
+    })
     nodes = laidOut
     edges = wires
+    restoring = false
   })
 
   function isValidConnection(connection: Connection | Edge): boolean {
@@ -66,11 +109,12 @@
 
   function add(expression: Node) {
     onChange(addFragment(bench, expression))
+    onFocus(expression.id)
     query = ''
   }
 </script>
 
-<div class="builder">
+<div class="builder" bind:clientWidth={width} bind:clientHeight={height}>
   <div class="palette nodrag">
     <input bind:value={query} placeholder="add: name, word, or AP -> _" aria-label="Add a fragment"
       onkeydown={event => { if (event.key === 'Enter' && results[0]) add(results[0].expression) }} />
@@ -98,18 +142,26 @@
     deleteKey={null}
     minZoom={0.2}
     proOptions={{ hideAttribution: true }}
-    onconnect={connection => onChange(plug(bench, connection.source, connection.target, portOf(connection.targetHandle)))}
+    onconnect={connection => {
+      // A plugged fragment joins its new tree's layout, so drop where it had been dragged.
+      const joined = new Set(preorder(bench.fragments.find(fragment => fragment.id === connection.source)!).map(node => node.id))
+      dragged = Object.fromEntries(Object.entries(dragged).filter(([id]) => !joined.has(id)))
+      onChange(plug(bench, connection.source, connection.target, portOf(connection.targetHandle)))
+    }}
     onconnectend={() => { refusal = '' }}
+    onmove={(_, next) => { viewport = next }}
+    onnodeclick={({ node }) => onFocus(node.id)}
     onedgeclick={({ edge }) => onChange(detach(bench, edge.source))}
     onnodedragstop={({ targetNode }) => { if (targetNode) dragged = { ...dragged, [targetNode.id]: targetNode.position } }}
   >
     <Background variant={BackgroundVariant.Lines} gap={14} bgColor="#0e1520" patternColor="#182434" />
     <Controls showLock={false} />
-    <!-- Fit when a new fragment appears (added, sent, or cut off), never while wiring. -->
-    <FitOnChange key={bench.fragments.at(-1)?.id ?? ''} />
+    <!-- Fit once on entry. New fragments appear in view, so adding one never moves the camera. -->
+    <FitOnChange key="bench" />
+    <CameraFollow request={camera} {width} {height} {fitSeq} />
   </SvelteFlow>
   <p class="hint" class:refused={refusal}>
-    {refusal || 'Drag a fragment’s top handle onto a matching hole · click a wire to cut it · adopt a complete sentence'}
+    {refusal || 'hjkl walks the fragments · drag a fragment’s top handle onto a matching hole · click a wire to cut it · adopt a complete sentence'}
   </p>
 </div>
 
