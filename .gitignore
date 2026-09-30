@@ -4,3 +4,4 @@ build/
 public/HazelGF.pgf
 public/HazelGF.json
 .DS_Store
+grammar/*.gfo
