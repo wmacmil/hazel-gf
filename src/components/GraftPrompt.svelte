@@ -35,6 +35,8 @@
   let query = $state('')
   let selected = $state(0)
   let parsing = $state(false)
+  /** The worker's time budget cut the search short (German clause-level parses are slow). */
+  let truncated = $state(false)
   let parsed = $state<{ expression: ReturnType<typeof fromPartialTerm>; text: string; language: string; via: string[] }[]>([])
   let serial = 0
 
@@ -44,12 +46,14 @@
     const target = sort
     const current = ++serial
     parsed = []
+    truncated = false
     if (!text || /->|→/.test(text)) { parsing = false; return }
     parsing = true
     const timer = setTimeout(() => {
-      parsePhraseInWorker(text, target).then(readings => {
+      parsePhraseInWorker(text, target).then(result => {
         if (current !== serial) return
-        parsed = readings.map(reading => ({ expression: fromPartialTerm(reading.term), text, language: reading.language, via: reading.via }))
+        parsed = result.readings.map(reading => ({ expression: fromPartialTerm(reading.term), text, language: reading.language, via: reading.via }))
+        truncated = result.truncated
         parsing = false
       }).catch(() => { if (current === serial) parsing = false })
     }, 160)
@@ -102,7 +106,7 @@
   <input bind:this={input} bind:value={query} onkeydown={keydown} aria-label="Graft expression" spellcheck="false" autocomplete="off"
     oninput={() => selected = 0} placeholder={HINT[mode]} />
   <p class="status">
-    {#if parsing}parsing…{:else if query.trim() && !parsed.length && !/->|→/.test(query)}no parse of “{query.trim()}” at {sort ?? 'any sort'} — showing operations and words{:else}{candidates.length} fit · ↑↓ choose · ↵ {mode} · ⇥ verb · esc{/if}
+    {#if parsing}parsing…{:else if truncated}stopped after 4 s — {parsed.length ? 'showing what parsed so far' : 'no parse yet'} (German clauses are slow; fewer words or a smaller hole help){:else if query.trim() && !parsed.length && !/->|→/.test(query)}no parse of “{query.trim()}” at {sort ?? 'any sort'} — showing operations and words{:else}{candidates.length} fit · ↑↓ choose · ↵ {mode} · ⇥ verb · esc{/if}
   </p>
   <ol class="results">
     {#each candidates as candidate, index (candidate.key)}

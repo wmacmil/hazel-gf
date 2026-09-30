@@ -156,47 +156,79 @@ export type PhraseReading = { term: string; category: CategoryId; language: stri
  * partial tree with its obligations. Unknown words fail fast.
  */
 export function parsePhrase(grammar: BrowserGrammar, language: string, text: string, terminals: Set<string>, target: CategoryId | undefined, limit = 12): PhraseReading[] {
+  const state = phraseState()
+  const steps = phraseSteps(grammar, language, text, terminals, target, state)
+  while (!steps.next().done) { /* run to completion */ }
+  return finishPhrase(state, limit)
+}
+
+type Concrete = BrowserGrammar['concretes'][string]
+/** What one phrase request has found so far, plus GF calls already made (frames and lifts repeat them). */
+export type PhraseState = { found: Map<string, PhraseReading & { size: number }>; memo: Map<string, unknown> }
+export const phraseState = (): PhraseState => ({ found: new Map(), memo: new Map() })
+
+/** Smallest first: the reading with the fewest extra constructors (a CN hole before an N hole under UseN). */
+export const finishPhrase = (state: PhraseState, limit = 12): PhraseReading[] =>
+  [...state.found.values()].sort((a, b) => a.via.length - b.via.length || a.size - b.size).slice(0, limit).map(({ size: _, ...reading }) => reading)
+
+function memoized<T>(state: PhraseState, key: string, compute: () => T): T {
+  if (!state.memo.has(key)) state.memo.set(key, compute())
+  return state.memo.get(key) as T
+}
+
+/**
+ * parsePhrase as steps: it yields after every GF call, so a worker can drop
+ * it when a newer request arrives or its time budget runs out, keeping what
+ * it found. (A German parse at S can take a second; a whole phrase request
+ * tries several sorts and frames.)
+ */
+export function* phraseSteps(grammar: BrowserGrammar, language: string, text: string, terminals: Set<string>, target: CategoryId | undefined, state: PhraseState): Generator<void, void> {
   const concrete = grammar.concretes[language]
-  if (!concrete) return []
+  if (!concrete) return
   const tokens = text.replace(/[.,!;:]+/g, ' ').split(/\s+/).filter(Boolean)
-  if (!tokens.length || tokens.every(token => HOLE_MARKERS.has(token))) return []
+  if (!tokens.length || tokens.every(token => HOLE_MARKERS.has(token))) return
   const words = (read: string[]) => read.filter(token => !HOLE_MARKERS.has(token))
   const readings = spellings(tokens, terminals).filter(read => words(read).every(token => terminals.has(token)))
-  if (!readings.length) return []
+  if (!readings.length) return
   const sorts = (CATEGORIES as readonly CategoryId[])
     .map(category => ({ category, chain: target ? chainTo(target, category) : [] }))
     .filter((entry): entry is { category: CategoryId; chain: NonNullable<ReturnType<typeof chainTo>> } => Boolean(entry.chain))
     .sort((a, b) => a.chain.length - b.chain.length)
-  const found = new Map<string, PhraseReading & { size: number }>()
+  const found = state.found
+  const mine = () => [...found.values()].filter(reading => reading.language === language).length
   // Shortest lift first, and stop at the first length that parses: a reading at
   // the target itself beats the same words lifted from below (GF's German
   // prediction is slow, so this also bounds the work).
   const lengths = [...new Set(sorts.map(entry => entry.chain.length))]
   for (const length of lengths) {
-    if (found.size) break
+    if (mine()) break
     for (const read of readings) for (const { category, chain } of sorts.filter(entry => entry.chain.length === length)) {
       const markers = read.filter(token => HOLE_MARKERS.has(token)).length
       const frames = FRAMES[category] ?? [{ category, extract: (tree: GfTree) => tree }]
-      const before = found.size
-      for (const frame of frames) if (found.size === before) for (const filled of resolveHoles(concrete, [...subjectTokens(grammar, language, frame.subject), ...read], frame.category)) {
-        let trees: GfTree[]
-        // Some sorts' extra fields are empty in some languages (a German CN), which
-        // gives GF's extractor a cyclic forest; such a sort just yields nothing.
-        try { trees = (concrete.parseTokens(filled, frame.category) as { trees: GfTree[] }).trees } catch { continue }
-        for (const tree of trees) {
-          const inner = frame.extract(tree)
-          const node = inner && toPartialNode(inner)
-          // Some placeholders reuse real words (the hole Det is "the"): a hole counts only where a `_` was typed.
-          if (!node || holesIn(node) !== markers) continue
-          const lifted = wrapIn(chain, node)
-          const term = toPartialTerm(lifted)
-          if (!found.has(term)) found.set(term, { term, category, language, via: chain.map(step => step.constructor), size: term.split(' ').length })
+      const before = mine()
+      for (const frame of frames) {
+        if (mine() !== before) break
+        const fills = yield* resolveHoles(concrete, language, [...subjectTokens(grammar, language, frame.subject), ...read], frame.category, state)
+        for (const filled of fills) {
+          // Some sorts' extra fields are empty in some languages (a German CN), which
+          // gives GF's extractor a cyclic forest; such a sort just yields nothing.
+          const trees = memoized(state, `parse\u0000${language}\u0000${frame.category}\u0000${filled.join(' ')}`, () => {
+            try { return (concrete.parseTokens(filled, frame.category) as { trees: GfTree[] }).trees } catch { return [] }
+          })
+          yield
+          for (const tree of trees) {
+            const inner = frame.extract(tree)
+            const node = inner && toPartialNode(inner)
+            // Some placeholders reuse real words (the hole Det is "the"): a hole counts only where a `_` was typed.
+            if (!node || holesIn(node) !== markers) continue
+            const lifted = wrapIn(chain, node)
+            const term = toPartialTerm(lifted)
+            if (!found.has(term)) found.set(term, { term, category, language, via: chain.map(step => step.constructor), size: term.split(' ').length })
+          }
         }
       }
     }
   }
-  // Smallest first: the reading with the fewest extra constructors (a CN hole before an N hole under UseN).
-  return [...found.values()].sort((a, b) => a.via.length - b.via.length || a.size - b.size).slice(0, limit).map(({ size: _, ...reading }) => reading)
 }
 
 /** A frame's subject as tokens in `language` (⟦NP⟧, I, ich, jag …). */
@@ -207,17 +239,20 @@ function subjectTokens(grammar: BrowserGrammar, language: string, subject: strin
 }
 
 /** Every way to replace the `_` markers by a typed hole placeholder GF accepts there (a few at most). */
-function resolveHoles(concrete: BrowserGrammar['concretes'][string], tokens: string[], category: string, budget = 24): string[][] {
+function* resolveHoles(concrete: Concrete, language: string, tokens: string[], category: string, state: PhraseState, budget = 24): Generator<void, string[][]> {
   const at = tokens.findIndex(token => HOLE_MARKERS.has(token))
   if (at < 0) return [tokens]
   const prefix = tokens.slice(0, at).join(' ')
-  let suggestions: string[] = []
-  try { suggestions = concrete.complete(`${prefix} `, category).suggestions as string[] } catch { return [] }
+  const suggestions = memoized(state, `complete\u0000${language}\u0000${category}\u0000${prefix}`, () => {
+    try { return concrete.complete(`${prefix} `, category).suggestions as string[] } catch { return [] as string[] }
+  })
+  yield
   const placeholders = [...new Set(suggestions.filter(word => word.startsWith('⟦')))]
   const results: string[][] = []
   for (const placeholder of placeholders) {
-    for (const rest of resolveHoles(concrete, [...tokens.slice(0, at), placeholder, ...tokens.slice(at + 1)], category, budget - results.length)) {
-      results.push(rest)
+    const rest = yield* resolveHoles(concrete, language, [...tokens.slice(0, at), placeholder, ...tokens.slice(at + 1)], category, state, budget - results.length)
+    for (const item of rest) {
+      results.push(item)
       if (results.length >= budget) return results
     }
   }

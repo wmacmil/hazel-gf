@@ -156,6 +156,24 @@ try {
   await page.keyboard.press('Meta+z'); await settle()
   expect('graft: undo restores the sentence and the bench together', await term(), 'MkS Present Positive (PredVP (DetCN EveryDet (AdjCN (PositA SmallA) (UseN DogN))) (UseV SleepV))')
 
+  // 3f. Slow parses never block: German typed into an S hole (≈1 s of GF per keystroke) must not queue up
+  // in front of the sentence box, which gets its own worker, and stale phrase parses are dropped.
+  await page.locator('.worked select').selectOption('blank sentence'); await settle()
+  await page.locator('.svelte-flow__node').first().click(); await settle()
+  await page.keyboard.press('i'); await prompt.waitFor()
+  await prompt.pressSequentially('der Hund schläft', { delay: 180 })
+  const slowStart = Date.now()
+  await page.waitForFunction(() => !document.querySelector('.graft .status')?.textContent?.includes('parsing'), null, { timeout: 12000 })
+    .catch(() => failures.push('graft: a German phrase at S never finished parsing'))
+  truthy('graft: the latest phrase parse answers within its budget, stale ones are dropped', Date.now() - slowStart < 9000)
+  await prompt.press('Escape')
+  await page.getByLabel('Sentence to parse').fill('the dog sleeps')
+  const sentenceStart = Date.now()
+  await page.waitForFunction(() => document.querySelector('.sentence-box .state')?.textContent?.includes('reading'), null, { timeout: 6000 })
+    .catch(() => failures.push('parse box: stuck on "parsing…" behind the graft prompt'))
+  truthy('parse box: answers in seconds even after heavy graft parsing', Date.now() - sentenceStart < 5000)
+  await page.getByLabel('Sentence to parse').fill('')
+
   // 3d. The builder: send, cut a wire, re-plug by dragging, refuse a wrong sort, adopt.
   await page.goto(`${BASE}?example=agreement&mode=view&operad=builder&layout=above&lines=auto`)
   await page.waitForSelector('.builder'); await page.waitForTimeout(600)
