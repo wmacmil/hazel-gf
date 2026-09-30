@@ -5,7 +5,8 @@
     "label": "English",
     "citation": {
       "verb": "VInf",
-      "noun": "Sg Nom"
+      "noun": "Sg Nom",
+      "adjective": "(AAdj Posit Nom)"
     },
     "infinitiveEnding": "",
     "negation": "^(not|\\w+n't)$",
@@ -46,7 +47,33 @@
       "OnPrep": "on",
       "WithPrep": "with",
       "ToPrep": "to",
-      "UnderPrep": "under"
+      "UnderPrep": "under",
+      "BirdN": "bird",
+      "ChildN": "child",
+      "AppleN": "apple",
+      "CarN": "car",
+      "FriendN": "friend",
+      "TeacherN": "teacher",
+      "SingV": "sing",
+      "SwimV": "swim",
+      "ComeV": "come",
+      "EatV2": "eat",
+      "BuyV2": "buy",
+      "HelpV2": "help",
+      "BigA": "big",
+      "SmallA": "small",
+      "OldA": "old",
+      "RedA": "red",
+      "HappyA": "happy",
+      "GoodA": "good",
+      "HereAdv": "here",
+      "TodayAdv": "today",
+      "OftenAdv": "often",
+      "VeryAdA": "very",
+      "EveryDet": "every",
+      "SomeDet": "some",
+      "AndConj": "and",
+      "OrConj": "or"
     },
     "smoke": [
       {
@@ -57,7 +84,8 @@
         "term": "MkS PastPerfect Negative (PredVP (DetCN Definite (UseN ManN)) (UseV SleepV))",
         "text": "the man hadn't slept"
       }
-    ]
+    ],
+    "expletive": "there"
   },
   {
     "id": "HazelGFGer",
@@ -65,7 +93,8 @@
     "label": "Deutsch",
     "citation": {
       "verb": "(VInf False)",
-      "noun": "Sg Nom"
+      "noun": "Sg Nom",
+      "adjective": "Posit APred"
     },
     "infinitiveEnding": "e?n$",
     "negation": "^nicht$",
@@ -125,7 +154,33 @@
       "OnPrep": "auf",
       "WithPrep": "mit",
       "ToPrep": "zu",
-      "UnderPrep": "unter"
+      "UnderPrep": "unter",
+      "BirdN": "Vogel",
+      "ChildN": "Kind",
+      "AppleN": "Apfel",
+      "CarN": "Auto",
+      "FriendN": "Freund",
+      "TeacherN": "Lehrer",
+      "SingV": "singen",
+      "SwimV": "schwimmen",
+      "ComeV": "kommen",
+      "EatV2": "essen",
+      "BuyV2": "kaufen",
+      "HelpV2": "helfen",
+      "BigA": "groß",
+      "SmallA": "klein",
+      "OldA": "alt",
+      "RedA": "rot",
+      "HappyA": "glücklich",
+      "GoodA": "gut",
+      "HereAdv": "hier",
+      "TodayAdv": "heute",
+      "OftenAdv": "oft",
+      "VeryAdA": "sehr",
+      "EveryDet": "jede(r)",
+      "SomeDet": "ein",
+      "AndConj": "und",
+      "OrConj": "oder"
     },
     "smoke": [
       {
@@ -136,7 +191,8 @@
         "term": "MkS PastPerfect Negative (PredVP (DetCN Definite (UseN ManN)) (UseV SleepV))",
         "text": "der Mann hatte nicht geschlafen"
       }
-    ]
+    ],
+    "expletive": "es"
   },
   {
     "id": "HazelGFSwe",
@@ -144,7 +200,8 @@
     "label": "Svenska",
     "citation": {
       "verb": "(VI (VInfin Act))",
-      "noun": "Sg Indef Nom"
+      "noun": "Sg Indef Nom",
+      "adjective": "(AF (APosit (Strong (GSg Utr))) Nom)"
     },
     "infinitiveEnding": "a$",
     "negation": "^inte$",
@@ -183,7 +240,33 @@
       "OnPrep": "på",
       "WithPrep": "med",
       "ToPrep": "till",
-      "UnderPrep": "under"
+      "UnderPrep": "under",
+      "BirdN": "fågel",
+      "ChildN": "barn",
+      "AppleN": "äpple",
+      "CarN": "bil",
+      "FriendN": "vän",
+      "TeacherN": "lärare",
+      "SingV": "sjunga",
+      "SwimV": "simma",
+      "ComeV": "komma",
+      "EatV2": "äta",
+      "BuyV2": "köpa",
+      "HelpV2": "hjälpa",
+      "BigA": "stor",
+      "SmallA": "liten",
+      "OldA": "gammal",
+      "RedA": "röd",
+      "HappyA": "glad",
+      "GoodA": "god",
+      "HereAdv": "här",
+      "TodayAdv": "idag",
+      "OftenAdv": "ofta",
+      "VeryAdA": "mycket",
+      "EveryDet": "varje",
+      "SomeDet": "någon",
+      "AndConj": "och",
+      "OrConj": "eller"
     },
     "smoke": [
       {
@@ -194,6 +277,7 @@
         "term": "MkS PastPerfect Negative (PredVP (DetCN Definite (UseN ManN)) (UseV SleepV))",
         "text": "mannen hade inte sovit"
       }
-    ]
+    ],
+    "expletive": "det"
   }
 ]

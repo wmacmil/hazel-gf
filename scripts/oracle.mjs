@@ -29,28 +29,55 @@ const leaves = category => [...signature.matchAll(/^(\w+) : (\w+) ;$/gm)]
 const arg = term => term.includes(' ') ? `(${term})` : term
 
 const temps = leaves('Temp'), pols = leaves('Pol'), preps = leaves('Prep')
-// Built from the leaves, not `gt`: the grammar is recursive, and `gt` fills
-// its budget with nested adverbials before listing the plain phrases.
-const nps = [...leaves('Pron').map(pron => `UsePron ${pron}`),
-  ...leaves('Det').flatMap(det => leaves('N').map(noun => `DetCN ${det} (UseN ${noun})`))]
-const vps = [...leaves('V').map(verb => `UseV ${verb}`),
-  ...leaves('V2').flatMap(verb => nps.map(np => `ComplV2 ${verb} (${np})`))]
-// Every PP-free sentence: Temp × Pol × NP × VP.
-const plain = temps.flatMap(t => pols.flatMap(p => nps.flatMap(np => vps.map(vp => `MkS ${t} ${p} (PredVP ${arg(np)} ${arg(vp)})`))))
-// A deterministic PP sample: every preposition × every NP inside it, on a few
-// clauses, tenses, and polarities, plus PPs modifying an object noun.
-const ppClauses = [['UsePron IPron', 'UseV SleepV'], ['DetCN Definite (UseN ManN)', 'UseV WalkV'],
-  ['UsePron ShePron', 'ComplV2 SeeV2 (UsePron HePron)']]
-const withPP = ['Present', 'Past', 'PresentPerfect', 'FuturePerfect'].flatMap(t => pols.flatMap(p => ppClauses.flatMap(([subject, vp]) =>
-  preps.flatMap(prep => nps.map(np => `MkS ${t} ${p} (PredVP (${subject}) (AdvVP (${vp}) (PrepNP ${prep} ${arg(np)})))`)))))
-const withAdvCN = ['Present', 'PastPerfect'].flatMap(t => preps.flatMap(prep => nps.map(np =>
-  `MkS ${t} Positive (PredVP (UsePron IPron) (ComplV2 SeeV2 (DetCN Definite (AdvCN (UseN WomanN) (PrepNP ${prep} ${arg(np)})))))`)))
-const trees = [...new Set([...plain, ...withPP, ...withAdvCN])].sort()
+const nouns = leaves('N'), dets = leaves('Det'), prons = leaves('Pron')
+const verbs = leaves('V'), transitives = leaves('V2'), adjectives = leaves('A'), adverbs = leaves('Adv'), conjunctions = leaves('Conj')
+// Built from the leaves, not `gt`: the grammar is recursive (PPs, adjectives,
+// coordination), so the oracle is a stratified sample: each stratum below
+// exercises one construction, crossed with the tenses and polarities it touches.
+const nps = [...prons.map(pron => `UsePron ${pron}`), ...dets.flatMap(det => nouns.map(noun => `DetCN ${det} (UseN ${noun})`))]
+const subjects = ['UsePron IPron', 'UsePron HePron', 'DetCN Definite (UseN ManN)', 'DetCN EveryDet (UseN WomanN)']
+const sentence = (tense, pol, clause) => `MkS ${tense} ${pol} (${clause})`
+const pred = (np, vp) => `PredVP ${arg(np)} ${arg(vp)}`
+const adjCN = (det, adjective, noun) => `DetCN ${det} (AdjCN (PositA ${adjective}) (UseN ${noun}))`
+const strata = {
+  // Every subject with every intransitive verb, in every tense and polarity.
+  core: temps.flatMap(t => pols.flatMap(p => nps.flatMap(np => verbs.map(v => sentence(t, p, pred(np, `UseV ${v}`)))))),
+  // Transitive objects, including the dative-governing HelpV2.
+  objects: [['Present', 'Positive'], ['Past', 'Positive'], ['PresentPerfect', 'Positive'], ['Present', 'Negative']].flatMap(([t, p]) =>
+    subjects.flatMap(subject => transitives.flatMap(v => nps.map(np => sentence(t, p, pred(subject, `ComplV2 ${v} ${arg(np)}`)))))),
+  // Attributive adjectives as subject and object; degree; predicative adjectives.
+  attributive: ['Present', 'Past'].flatMap(t => pols.flatMap(p => dets.flatMap(d => adjectives.flatMap(a => nouns.map(n => sentence(t, p, pred(adjCN(d, a, n), 'UseV SleepV'))))))),
+  adjectiveObjects: dets.flatMap(d => adjectives.flatMap(a => nouns.map(n => sentence('Present', 'Positive', pred('UsePron IPron', `ComplV2 SeeV2 (${adjCN(d, a, n)})`))))),
+  degree: dets.flatMap(d => adjectives.flatMap(a => ['ManN', 'WomanN', 'HouseN'].map(n =>
+    sentence('Present', 'Positive', pred(`DetCN ${d} (AdjCN (AdAP VeryAdA (PositA ${a})) (UseN ${n}))`, 'UseV SleepV'))))),
+  predicative: temps.flatMap(t => pols.flatMap(p => [...prons.map(pron => `UsePron ${pron}`), ...nouns.map(n => `DetCN Definite (UseN ${n})`)]
+    .flatMap(subject => adjectives.map(a => sentence(t, p, pred(subject, `UseAP (PositA ${a})`)))))),
+  // Existentials: there is / es gibt / det finns.
+  existential: [...temps.flatMap(t => pols.flatMap(p => nps.map(np => sentence(t, p, `ExistNP ${arg(np)}`)))),
+    ...pols.flatMap(p => adjectives.flatMap(a => nouns.map(n => sentence('Present', p, `ExistNP (${adjCN('Indefinite', a, n)})`))))],
+  adverbs: ['Present', 'Past', 'PresentPerfect'].flatMap(t => pols.flatMap(p => subjects.flatMap(subject =>
+    ['UseV WalkV', 'ComplV2 SeeV2 (UsePron HePron)'].flatMap(vp => adverbs.map(adv => sentence(t, p, pred(subject, `AdvVP (${vp}) ${adv}`))))))),
+  // Prepositional phrases on the verb phrase and on an object noun.
+  prepositions: [['Present', 'Positive'], ['PresentPerfect', 'Positive'], ['Past', 'Negative']].flatMap(([t, p]) =>
+    [['UsePron IPron', 'UseV SleepV'], ['DetCN Definite (UseN ManN)', 'UseV WalkV'], ['UsePron ShePron', 'ComplV2 SeeV2 (UsePron HePron)']]
+      .flatMap(([subject, vp]) => preps.flatMap(prep => nps.map(np => sentence(t, p, pred(subject, `AdvVP (${vp}) (PrepNP ${prep} ${arg(np)})`)))))),
+  nounModifiers: ['Present', 'PastPerfect'].flatMap(t => preps.flatMap(prep => nps.map(np =>
+    sentence(t, 'Positive', pred('UsePron IPron', `ComplV2 SeeV2 (DetCN Definite (AdvCN (UseN WomanN) (PrepNP ${prep} ${arg(np)})))`))))),
+  // Coordination of noun phrases (subject and object) and of sentences.
+  conjoinedNPs: ['Present', 'Past'].flatMap(t => conjunctions.flatMap(c => nps.slice(0, 10).flatMap(x => nps.slice(6, 16).map(y =>
+    sentence(t, 'Positive', pred(`ConjNP ${c} ${arg(x)} ${arg(y)}`, 'UseV SwimV')))))),
+  conjoinedObjects: conjunctions.flatMap(c => nps.slice(0, 8).flatMap(x => nps.slice(6, 14).map(y =>
+    sentence('Present', 'Positive', pred('UsePron IPron', `ComplV2 SeeV2 (ConjNP ${c} ${arg(x)} ${arg(y)})`))))),
+  conjoinedSentences: conjunctions.flatMap(c => subjects.flatMap(x => verbs.flatMap(v => subjects.map(y =>
+    `ConjS ${c} (${sentence('Present', 'Positive', pred(x, `UseV ${v}`))}) (${sentence('Past', 'Negative', pred(y, 'UseV RunV'))})`)))),
+}
+const plain = strata.core
+const trees = [...new Set(Object.values(strata).flat())].sort()
 
 // Paradigm tables for every lexical leaf: GF's own form ↔ parameter-cell
 // pairs (`l -table`). The editor segments words into stem + exponents
 // against these, instead of hand-written splits.
-const LEXICAL_CATEGORIES = new Set(['N', 'V', 'V2', 'Pron', 'Det'])
+const LEXICAL_CATEGORIES = new Set(['N', 'V', 'V2', 'Pron', 'Det', 'A'])
 function paradigms() {
   const abstract = execFileSync('gf', ['--run', pgf], { input: 'pg -funs\nq\n', encoding: 'utf8' })
   // Nullary functions of a lexical category, e.g. `SleepV : V ;`.
@@ -87,6 +114,7 @@ function government(tables) {
     const probes = [
       ...preps.map(prep => [prep, `MkS Present Positive (PredVP (UsePron IPron) (AdvVP (UseV SleepV) (PrepNP ${prep} (UsePron HePron))))`]),
       ...leaves('V2').map(verb => [verb, `MkS Present Positive (PredVP (UsePron IPron) (ComplV2 ${verb} (UsePron HePron)))`]),
+      ['ExistNP', 'MkS Present Positive (ExistNP (UsePron HePron))'],
     ]
     const output = gfShell(probes.map(([, term]) => `l -lang=${language} ${term}`).join('\n') + '\nq\n').split('\n').filter(Boolean)
     result[language] = {}
@@ -116,7 +144,8 @@ try {
   const grammar = await (await fetch(`${base}?command=grammar`)).json()
   const shards = {}
   for (const tree of trees) {
-    const tense = tree.split(' ')[1]
+    // Sharded by the first clause's tense.
+    const tense = tree.match(/MkS (\w+)/)[1]
     const table = (shards[tense] ??= {})
     const response = await fetch(`${base}?${new URLSearchParams({ command: 'linearize', tree })}`)
     if (!response.ok) throw new Error(`linearize failed (${response.status}) for ${tree}`)
@@ -133,8 +162,8 @@ try {
   }
   mkdirSync(staticDir, { recursive: true })
   writeFileSync(resolve(staticDir, 'paradigms.json'), JSON.stringify(paradigms()))
-  writeFileSync(resolve(outDir, 'index.json'), JSON.stringify({ shards: Object.keys(shards).sort(), trees: trees.length, plain: plain.length }))
-  console.log(`oracle: ${plain.length} PP-free + ${trees.length - plain.length} PP sentences = ${trees.length} trees × ${languages.size} languages in ${Object.keys(shards).length} tense shards → oracle/`)
+  writeFileSync(resolve(outDir, 'index.json'), JSON.stringify({ shards: Object.keys(shards).sort(), trees: trees.length, strata: Object.fromEntries(Object.entries(strata).map(([name, list]) => [name, list.length])) }))
+  console.log(`oracle: ${trees.length} trees (${Object.entries(strata).map(([name, list]) => `${name} ${list.length}`).join(', ')}) × ${languages.size} languages in ${Object.keys(shards).length} tense shards → oracle/`)
 } finally {
   gf.kill('SIGTERM')
 }

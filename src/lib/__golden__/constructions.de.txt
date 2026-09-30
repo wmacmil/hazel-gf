@@ -1,0 +1,15 @@
+der[DEF] groß·e[AGR] Hund ~schläf·t[PRES·3SG]
+eine[INDEF] alt·e[AGR] Frau ~schläf·t[PRES·3SG]
+jedes klein·e[AGR] Kind ~schlief[PAST]·∅[3SG]
+ein gut·es[AGR] Haus ~schläf·t[PRES·3SG] nicht[NEG]
+ich seh·e[PRES] ein[INDEF] rot·es[AGR] Auto
+der[DEF] sehr glücklich·e[AGR] Mann ~schläf·t[PRES·3SG]
+das[DEF] Kind war[PAST·3SG] glücklich
+wir sind[PRES·PERF] nicht[NEG] alt gewesen[PTCP]
+es gibt[PRES] einen[INDEF·ACC] Vogel
+es hat[PRES·PERF] nicht[NEG] ein[INDEF] rot·es[AGR] Auto gegeben[PTCP]
+jeder Lehrer ~hilf·t[PRES·3SG] dem[DEF·DAT] Kind
+er geh·t[PRES·3SG] heute
+der[DEF] Mann und die[DEF] Frau schwimm·en[PRES]
+ich seh·e[PRES] ihn[ACC] oder den[DEF·ACC] Hund
+er ~schläf·t[PRES·3SG] und jede Frau ~lief[PAST]·∅[3SG] nicht[NEG]

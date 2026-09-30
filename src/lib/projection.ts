@@ -1,6 +1,6 @@
 import { LANGUAGE_IDS, marksAgreement, profileOf } from './languages'
 import { outputOf, preorder } from './editor'
-import { segmentWord, type Paradigms } from './morphology'
+import { segmentWord, type FeatureAxis, type Paradigms } from './morphology'
 import type {
   ApplyNode, CategoryId, LanguageId, LinearizationProjection, LinearizedSegment, Node, NodeId,
 } from './model'
@@ -20,6 +20,36 @@ export type RawLinearization = { to: string; text: string; brackets: RawBracket[
 const isToken = (value: RawBracket): value is RawToken => 'token' in value
 
 type LeafGroup = { fun: string; category: string; node?: NodeId; tokens: string[] }
+
+/**
+ * Give server brackets (which carry no node ids) their exact tree nodes by
+ * descending the tree with them: a bracket's sub-brackets belong to its node's
+ * descendants, and among same-named candidates the first unused one is taken
+ * (surface order = argument order for coordination: the man and the woman).
+ * The browser runtime already supplies exact ids and is left untouched.
+ */
+function assignNodes(brackets: RawBracket[], root: Node): RawBracket[] {
+  const used = new Set<string>()
+  const pick = (fun: string, scope: Node[]): Node | undefined => {
+    const queue = [...scope]
+    while (queue.length) {
+      const node = queue.shift()!
+      if (node.kind === 'apply' && node.constructor === fun && !used.has(node.id)) return node
+      if (node.kind === 'apply') queue.push(...node.children)
+    }
+  }
+  const visit = (bracket: RawBracket, scope: Node[]): RawBracket => {
+    if (isToken(bracket) || bracket.node) return bracket
+    const node = pick(bracket.fun, scope)
+    if (node) used.add(node.id)
+    // A discontinuous constituent repeats its bracket: later copies reuse the node.
+    const reuse = node ?? scope.map(candidate => preorder(candidate)).flat()
+      .find(candidate => candidate.kind === 'apply' && candidate.constructor === bracket.fun)
+    const within = reuse?.kind === 'apply' ? reuse.children : scope
+    return { ...bracket, node: reuse?.id, children: (bracket.children ?? []).map(child => visit(child, within)) }
+  }
+  return brackets.map(bracket => visit(bracket, [root]))
+}
 
 function bracketLeaves(brackets: RawBracket[]): LeafGroup[] {
   const groups: LeafGroup[] = []
@@ -78,49 +108,123 @@ export const TENSES: Record<string, { label: string; perfect: boolean }> = {
   FuturePerfect: { label: 'FUT', perfect: true }, ConditionalPerfect: { label: 'COND', perfect: true },
 }
 
-const THIRD_SINGULAR = ['HePron', 'ShePron', 'ManN', 'WomanN', 'HouseN', 'DogN', 'CatN', 'BookN']
-
 function link(segment: LinearizedSegment, node: Node, feature: string) {
   if (!segment.realizedBy.includes(node.id)) segment.realizedBy.push(node.id)
   if (!segment.categories.includes(outputOf(node))) segment.categories.push(outputOf(node))
   if (!segment.featureValues.includes(feature)) segment.featureValues.push(feature)
 }
 
+/** Per-word controllers: which node each feature axis of a word answers to. */
+type Controllers = Map<string, Partial<Record<FeatureAxis, NodeId>>>
+const control = (controllers: Controllers, segment: LinearizedSegment, axis: FeatureAxis, node: NodeId | undefined) => {
+  if (node) controllers.set(segment.id, { ...controllers.get(segment.id), [axis]: node })
+}
+
 /**
- * GF attributes auxiliaries (has, wird, ska, didn't) to structural nodes such as
- * PredVP, never to the Temp node, so tense and agreement are recovered here:
- * the finite element is the first auxiliary, or the lexical verb when there is none.
+ * A clause: one MkS with its tense, polarity, body (PredVP or ExistNP), and
+ * the words GF attributed inside it. A coordinated sentence (ConjS) has one
+ * clause per conjunct, each with its own tense, polarity, and subject.
  */
-function annotateVerbGroup(language: LanguageId, root: Node, segments: LinearizedSegment[]) {
-  const pred = findApply(root, 'PredVP')[0]
-  if (!pred) return
-  const [subject, vp] = pred.children
-  const verb = preorder(vp).find(node => node.kind === 'apply' && (node.output === 'V' || node.output === 'V2'))
-  const verbSegment = verb && segments.find(item => item.realizedBy.includes(verb.id))
-  if (!verb || !verbSegment) return
+type Clause = { sentence: ApplyNode; temp?: ApplyNode; pol?: ApplyNode; body: Node; segments: LinearizedSegment[] }
 
-  const temp = findApply(root, 'MkS')[0]?.children[0]
-  const tense = temp?.kind === 'apply' ? TENSES[temp.constructor] : undefined
-  // realizedBy[0] is GF's own bracket attribution; later entries were added by annotation.
-  const structural = new Set(preorder(root).filter(node => node.kind === 'apply' && node.children.length).map(node => node.id))
-  const auxiliaries = segments.filter(segment => segment.role === 'overt' && structural.has(segment.realizedBy[0]) &&
-    !isBareNegation(language, segment.text))
+function clausesOf(root: Node, segments: LinearizedSegment[]): Clause[] {
+  return findApply(root, 'MkS').map(sentence => {
+    const scope = new Set(preorder(sentence).map(node => node.id))
+    const [temp, pol, body] = sentence.children
+    return {
+      sentence, body,
+      temp: temp?.kind === 'apply' ? temp : undefined,
+      pol: pol?.kind === 'apply' ? pol : undefined,
+      segments: segments.filter(segment => scope.has(segment.realizedBy[0])),
+    }
+  })
+}
+
+/**
+ * Subject agreement from the subject's structure: he/she, or any determined
+ * noun (every determiner here is singular), is third singular, controlled by
+ * the pronoun or head noun; a coordinated subject is plural.
+ */
+function subjectAgreement(subject: Node | undefined): { label: '3SG'; controller: NodeId } | undefined {
+  if (!subject || subject.kind !== 'apply') return undefined
+  if (subject.constructor === 'UsePron') {
+    const pronoun = subject.children[0]
+    return pronoun.kind === 'apply' && (pronoun.constructor === 'HePron' || pronoun.constructor === 'ShePron')
+      ? { label: '3SG', controller: pronoun.id } : undefined
+  }
+  if (subject.constructor === 'DetCN') {
+    const noun = preorder(subject.children[1]).find(node => node.kind === 'apply' && node.output === 'N')
+    return noun ? { label: '3SG', controller: noun.id } : undefined
+  }
+  return undefined
+}
+
+/**
+ * GF attributes auxiliaries (has, wird, ska, didn't, the existential's is/gibt/
+ * finns) to structural nodes, never to the Temp node, so tense and agreement are
+ * recovered per clause: the finite element is the clause's first auxiliary, or
+ * its lexical verb when there is none.
+ */
+function annotateClause(language: LanguageId, clause: Clause, structural: Set<string>, controllers: Controllers) {
+  const profile = profileOf(language)
+  const tense = clause.temp ? TENSES[clause.temp.constructor] : undefined
+  const verb = clause.body.kind === 'apply' && clause.body.constructor === 'PredVP'
+    ? preorder(clause.body.children[1]).find(node => node.kind === 'apply' && (node.output === 'V' || node.output === 'V2'))
+    : undefined
+  const verbSegment = verb && clause.segments.find(item => item.realizedBy.includes(verb.id))
+  const auxiliaries = clause.segments.filter(segment => segment.role === 'overt' && structural.has(segment.realizedBy[0])
+    && !isBareNegation(language, segment.text) && segment.text.toLowerCase() !== profile.expletive)
   const finite = auxiliaries[0] ?? verbSegment
+  if (!finite) return
 
-  if (tense && temp) {
-    link(finite, temp, tense.label)
+  for (const segment of clause.segments) {
+    control(controllers, segment, 'tense', clause.temp?.id)
+    control(controllers, segment, 'aspect', clause.temp?.id)
+    if (clause.pol?.constructor === 'Negative') control(controllers, segment, 'polarity', clause.pol.id)
+  }
+  if (tense && clause.temp) {
+    link(finite, clause.temp, tense.label)
     if (tense.perfect) {
-      link(auxiliaries.find(segment => segment !== finite) ?? finite, temp, 'PERF')
-      link(verbSegment, temp, 'PTCP')
+      // The participle is the lexical verb, or (copula, existential) the last auxiliary: been, gewesen, funnits.
+      // PERF goes to the have/sein auxiliary just before it: has slept, will have slept, haven't been.
+      const participle = verbSegment ?? (auxiliaries.length > 1 ? auxiliaries.at(-1) : undefined)
+      link(auxiliaries.filter(segment => segment !== participle).at(-1) ?? finite, clause.temp, 'PERF')
+      if (participle) link(participle, clause.temp, 'PTCP')
     }
   } else {
     finite.featureValues.push('PRES')
   }
 
-  const subjectHead = preorder(subject).find(node => node.kind === 'apply' && THIRD_SINGULAR.includes(node.constructor))
-  if (!subjectHead) return
+  const agreement = clause.body.kind === 'apply' && clause.body.constructor === 'PredVP' ? subjectAgreement(clause.body.children[0]) : undefined
   // A zero-agreement language (Swedish) still records 3SG; morphology renders it as ∅.
-  if (marksAgreement(profileOf(language), tense?.label)) finite.featureValues.push('3SG')
+  if (agreement && marksAgreement(profile, tense?.label)) {
+    finite.featureValues.push(agreement.label)
+    control(controllers, finite, 'agreement', agreement.controller)
+  }
+}
+
+/**
+ * Adjective agreement: an adjective whose form differs from its citation
+ * (große, stora, glatt) carries an agreement exponent, controlled by the noun
+ * it modifies, or by the subject when it is predicative (barnet är glatt).
+ */
+function annotateAdjectives(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms: Paradigms, controllers: Controllers) {
+  const citationCell = profileOf(language).citation.adjective
+  const tables = paradigms.tables[language] ?? {}
+  const adjectiveIn = (node: Node) => preorder(node).find((item): item is ApplyNode => item.kind === 'apply' && item.output === 'A')
+  const nounIn = (node: Node) => preorder(node).find(item => item.kind === 'apply' && item.output === 'N')
+  const mark = (adjective: ApplyNode | undefined, controller: Node | undefined) => {
+    const segment = adjective && segments.find(item => item.realizedBy[0] === adjective.id)
+    const citation = adjective && tables[adjective.constructor]?.[citationCell]
+    if (!segment || !citation || segment.text === citation) return
+    if (!segment.featureValues.includes('AGR')) segment.featureValues.push('AGR')
+    control(controllers, segment, 'agreement', controller?.id)
+  }
+  for (const modified of findApply(root, 'AdjCN')) mark(adjectiveIn(modified.children[0]), nounIn(modified.children[1]))
+  for (const predicate of findApply(root, 'PredVP')) {
+    const vp = predicate.children[1]
+    if (vp.kind === 'apply' && vp.constructor === 'UseAP') mark(adjectiveIn(vp), nounIn(predicate.children[0]) ?? predicate.children[0])
+  }
 }
 
 const CASE_IN_CELL = /\b(Nom|Acc|Dat|Gen)\b|NP(Nom|Acc)/
@@ -145,8 +249,9 @@ function annotateCase(language: LanguageId, root: Node, segments: LinearizedSegm
     governors.set(segment.id, governor)
   }
   for (const phrase of preorder(root)) {
-    if (phrase.kind !== 'apply' || (phrase.constructor !== 'PrepNP' && phrase.constructor !== 'ComplV2')) continue
-    const [governor, np] = phrase.children
+    if (phrase.kind !== 'apply' || !['PrepNP', 'ComplV2', 'ExistNP'].includes(phrase.constructor)) continue
+    // The existential governs its noun phrase itself (es gibt einen Vogel).
+    const [governor, np] = phrase.constructor === 'ExistNP' ? [phrase, phrase.children[0]] : phrase.children
     const governed = governor.kind === 'apply' ? government[governor.constructor] : undefined
     if (!governed || governed === 'Nom' || np.kind !== 'apply') continue
     const label = governed.toUpperCase()
@@ -186,16 +291,6 @@ function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[
     const segment = result.find(item => item.realizedBy.includes(det.id))
     if (segment && !segment.featureValues.includes('INDEF')) segment.featureValues.push('INDEF')
   }
-  for (const pol of findApply(root, 'Negative')) {
-    const segment = result.find(item => item.realizedBy.includes(pol.id))
-      ?? result.find(item => isNegationWord(language, item.text))
-    if (segment) {
-      if (!segment.realizedBy.includes(pol.id)) segment.realizedBy.push(pol.id)
-      if (!segment.categories.includes('Pol')) segment.categories.unshift('Pol')
-      if (!segment.featureValues.includes('NEG')) segment.featureValues.push('NEG')
-    }
-  }
-
   if (profileOf(language).suffixedDefiniteness) {
     // Suffixed definiteness (kvinna·n): the noun word also realizes the Det node.
     for (const detCn of findApply(root, 'DetCN')) {
@@ -203,24 +298,42 @@ function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[
       if (det.kind !== 'apply' || det.constructor !== 'Definite' || cn.kind !== 'apply') continue
       const noun = preorder(cn).find(node => node.kind === 'apply' && node.output === 'N')
       const segment = noun && result.find(item => item.realizedBy[0] === noun.id)
-      if (segment && !result.some(item => item.realizedBy[0] === det.id)) link(segment, det, 'DEF')
+      // Also when the determiner has a word of its own: double definiteness (den stora hunden).
+      if (segment) link(segment, det, 'DEF')
     }
   }
 
-  const governors = paradigms ? annotateCase(language, root, result, paradigms) : new Map<string, NodeId>()
-  annotateVerbGroup(language, root, result)
-  if (paradigms) attachMorphemes(language, root, result, paradigms, governors)
+  const controllers: Controllers = new Map()
+  const clauses = clausesOf(root, result)
+  // Negation per clause: the word that realizes that clause's Pol (nicht, inte, doesn't).
+  for (const clause of clauses) {
+    const pol = clause.pol
+    if (pol?.constructor !== 'Negative') continue
+    const segment = clause.segments.find(item => item.realizedBy.includes(pol.id))
+      ?? clause.segments.find(item => isNegationWord(language, item.text))
+    if (segment) {
+      if (!segment.realizedBy.includes(pol.id)) segment.realizedBy.push(pol.id)
+      if (!segment.categories.includes('Pol')) segment.categories.unshift('Pol')
+      if (!segment.featureValues.includes('NEG')) segment.featureValues.push('NEG')
+    }
+  }
+  if (paradigms) {
+    for (const [segmentId, governor] of annotateCase(language, root, result, paradigms)) controllers.set(segmentId, { ...controllers.get(segmentId), case: governor })
+  }
+  // realizedBy[0] is GF's own bracket attribution; later entries were added by annotation.
+  const structural = new Set(preorder(root).filter(node => node.kind === 'apply' && node.children.length).map(node => node.id))
+  for (const clause of clauses) annotateClause(language, clause, structural, controllers)
+  if (paradigms) {
+    annotateAdjectives(language, root, result, paradigms, controllers)
+    attachMorphemes(language, root, result, paradigms, controllers)
+  }
   return result
 }
 
-const LEXICAL_CATEGORIES = new Set(['N', 'V', 'V2', 'Pron', 'Det'])
+const LEXICAL_CATEGORIES = new Set(['N', 'V', 'V2', 'Pron', 'Det', 'A'])
 
 /** Split every overt word into morpheme sub-boxes, each linked to the nodes that control it. */
-function attachMorphemes(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms: Paradigms, governors: Map<string, NodeId>) {
-  const temp = findApply(root, 'MkS')[0]?.children[0]
-  const pol = findApply(root, 'Negative')[0]
-  const subject = findApply(root, 'PredVP')[0]?.children[0]
-  const subjectHead = subject && preorder(subject).find(node => node.kind === 'apply' && THIRD_SINGULAR.includes(node.constructor))
+function attachMorphemes(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms: Paradigms, controllers: Controllers) {
   const determinerOf = new Map<NodeId, NodeId>()
   for (const detCn of findApply(root, 'DetCN')) {
     const noun = preorder(detCn.children[1]).find(node => node.kind === 'apply' && node.output === 'N')
@@ -235,11 +348,7 @@ function attachMorphemes(language: LanguageId, root: Node, segments: LinearizedS
       : undefined
     segment.morphemes = segmentWord({
       language, lexeme, text: segment.text, features: segment.featureValues, realizedBy: segment.realizedBy,
-      controllers: {
-        tense: temp?.id, aspect: temp?.id, agreement: subjectHead?.id, polarity: pol?.id,
-        definiteness: lexeme ? determinerOf.get(lexeme.id) : undefined,
-        case: governors.get(segment.id),
-      },
+      controllers: { ...controllers.get(segment.id), definiteness: lexeme ? determinerOf.get(lexeme.id) : undefined },
     }, paradigms)
   }
 }
@@ -257,7 +366,7 @@ function normalizeOne(raw: RawLinearization, root: Node, revision: number, parad
   const occurrence = new Map<string, number>()
   let serial = 0
   const base: LinearizedSegment[] = []
-  for (const leaf of bracketLeaves(raw.brackets)) {
+  for (const leaf of bracketLeaves(assignNodes(raw.brackets, root))) {
     // Exact node when the runtime supplies it; otherwise the n-th node with that constructor.
     const index = occurrence.get(leaf.fun) ?? 0
     const candidates = nodesByConstructor.get(leaf.fun) ?? []

@@ -1,4 +1,4 @@
-export const CATEGORIES = ['S', 'Cl', 'NP', 'VP', 'CN', 'N', 'V', 'V2', 'Det', 'Pron', 'Pol', 'Temp', 'Adv', 'Prep'] as const
+export const CATEGORIES = ['S', 'Cl', 'NP', 'VP', 'CN', 'N', 'V', 'V2', 'Det', 'Pron', 'Pol', 'Temp', 'Adv', 'Prep', 'A', 'AP', 'AdA', 'Conj'] as const
 export type CategoryId = (typeof CATEGORIES)[number]
 export type NodeId = string
 export type ConstructorId = string
@@ -68,18 +68,22 @@ export type LinearizationProjection = {
  */
 export const CATEGORY_COLORS: Record<CategoryId, { ink: string; glow: string; wash: string }> = {
   V2: { ink: '#329523', glow: '#93f584', wash: '#e9f9e7' }, // 112°
-  V: { ink: '#23952e', glow: '#84f590', wash: '#e7f9e8' }, // 126°
-  VP: { ink: '#239547', glow: '#84f5a8', wash: '#e7f9ec' }, // 139°
-  Adv: { ink: '#239561', glow: '#84f5c2', wash: '#e7f9f1' }, // 153°
-  Det: { ink: '#23957a', glow: '#84f5db', wash: '#e7f9f5' }, // 166°
-  NP: { ink: '#239595', glow: '#84f5f5', wash: '#e7f9f9' }, // 180°
-  CN: { ink: '#237c95', glow: '#84ddf5', wash: '#e7f5f9' }, // 193°
-  N: { ink: '#236195', glow: '#84c2f5', wash: '#e7f1f9' }, // 207°
-  Pron: { ink: '#234995', glow: '#84aaf5', wash: '#e7edf9' }, // 220°
-  Prep: { ink: '#232e95', glow: '#8490f5', wash: '#e7e8f9' }, // 234°
-  S: { ink: '#302395', glow: '#9184f5', wash: '#e9e7f9' }, // 247°
-  Cl: { ink: '#4b2395', glow: '#ac84f5', wash: '#ede7f9' }, // 261°
-  Temp: { ink: '#632395', glow: '#c484f5', wash: '#f1e7f9' }, // 274°
+  V: { ink: '#239527', glow: '#84f588', wash: '#e7f9e7' }, // 122°
+  VP: { ink: '#23953c', glow: '#84f59d', wash: '#e7f9ea' }, // 133°
+  Adv: { ink: '#23954f', glow: '#84f5b0', wash: '#e7f9ee' }, // 143°
+  AdA: { ink: '#239561', glow: '#84f5c2', wash: '#e7f9f1' }, // 153°
+  A: { ink: '#239576', glow: '#84f5d7', wash: '#e7f9f4' }, // 164°
+  AP: { ink: '#239589', glow: '#84f5ea', wash: '#e7f9f7' }, // 174°
+  Det: { ink: '#238d95', glow: '#84eef5', wash: '#e7f8f9' }, // 184°
+  NP: { ink: '#237895', glow: '#84d9f5', wash: '#e7f4f9' }, // 195°
+  CN: { ink: '#236595', glow: '#84c6f5', wash: '#e7f1f9' }, // 205°
+  N: { ink: '#235095', glow: '#84b1f5', wash: '#e7eef9' }, // 216°
+  Pron: { ink: '#233d95', glow: '#849ff5', wash: '#e7ebf9' }, // 226°
+  Prep: { ink: '#232a95', glow: '#848cf5', wash: '#e7e8f9' }, // 236°
+  Conj: { ink: '#302395', glow: '#9184f5', wash: '#e9e7f9' }, // 247°
+  S: { ink: '#432395', glow: '#a484f5', wash: '#ece7f9' }, // 257°
+  Cl: { ink: '#562395', glow: '#b784f5', wash: '#efe7f9' }, // 267°
+  Temp: { ink: '#6b2395', glow: '#cc84f5', wash: '#f2e7f9' }, // 278°
   Pol: { ink: '#7e2395', glow: '#df84f5', wash: '#f5e7f9' }, // 288°
 }
 

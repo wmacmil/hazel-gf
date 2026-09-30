@@ -1,0 +1,15 @@
+den[DEF] stor·a[AGR] hund·en[DEF] sov·er[PRES]·∅[3SG]
+en[INDEF] gammal kvinna sov·er[PRES]·∅[3SG]
+varje ~litet[AGR] barn sov·∅[PAST]·∅[3SG]
+något ~gott[AGR] hus sov·er[PRES]·∅[3SG] inte[NEG]
+jag se·r[PRES] en[INDEF] röd bil
+den[DEF] mycket glad·a[AGR] man·nen[DEF] sov·er[PRES]·∅[3SG]
+barn·et[DEF] var[PAST]·∅[3SG] ~glatt[AGR]
+vi har[PRES·PERF] inte[NEG] varit[PTCP] ~gamla[AGR]
+det finns[PRES] en[INDEF] fågel
+det har[PRES·PERF] inte[NEG] funnits[PTCP] en[INDEF] röd bil
+varje lärare hjälp·er[PRES]·∅[3SG] barn·et[DEF]
+han gå·r[PRES]·∅[3SG] idag
+man·nen[DEF] och kvinna·n[DEF] simm·ar[PRES]
+jag se·r[PRES] honom[ACC] eller hund·en[DEF]
+han sov·er[PRES]·∅[3SG] och varje kvinna ~sprang[PAST]·∅[3SG] inte[NEG]

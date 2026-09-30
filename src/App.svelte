@@ -59,7 +59,17 @@
     'the man does not sleep': agreementExample,
     'the man sleeps in the house': prepositionExample,
     'I see the woman with the dog': modifierExample,
+    'the big dog sleeps': () => fromTerm('MkS Present Positive (PredVP (DetCN Definite (AdjCN (PositA BigA) (UseN DogN))) (UseV SleepV))'),
+    'there is a bird': () => fromTerm('MkS Present Positive (ExistNP (DetCN Indefinite (UseN BirdN)))'),
+    'every teacher helps the child': () => fromTerm('MkS Present Positive (PredVP (DetCN EveryDet (UseN TeacherN)) (ComplV2 HelpV2 (DetCN Definite (UseN ChildN))))'),
+    'the man and the woman swim': () => fromTerm('MkS Present Positive (PredVP (ConjNP AndConj (DetCN Definite (UseN ManN)) (DetCN Definite (UseN WomanN))) (UseV SwimV))'),
+    'I sleep, or you won’t run': () => fromTerm('ConjS OrConj (MkS Present Positive (PredVP (UsePron IPron) (UseV SleepV))) (MkS Future Negative (PredVP (UsePron YouPron) (UseV RunV)))'),
     'blank sentence': newDocument,
+  }
+
+  function fromTerm(term: string): EditorDocument {
+    const root = fromGfTerm(term)
+    return { ...newDocument(), root, focus: root.id }
   }
 
   function loadParsed(term: string) {
@@ -455,7 +465,7 @@
       </div>
 
       <div class="pane details-pane">
-        {#if complete && document.root.kind === 'apply'}
+        {#if complete && document.root.kind === 'apply' && document.root.constructor === 'MkS'}
           <TenseVariations root={document.root} {runtime} {linked} {pinned} onPick={pickTense} onHover={ids => linked = ids} onPin={pin} />
         {:else}
           <p class="details-empty">Details such as tense variations appear once the sentence is complete.</p>

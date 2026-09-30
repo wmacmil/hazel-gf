@@ -17,7 +17,7 @@ export type FeatureAxis = 'tense' | 'aspect' | 'agreement' | 'polarity' | 'defin
 export const FEATURE_AXES: Record<string, FeatureAxis> = {
   PRES: 'tense', PAST: 'tense', FUT: 'tense', COND: 'tense',
   PERF: 'aspect', PTCP: 'aspect',
-  '3SG': 'agreement',
+  '3SG': 'agreement', AGR: 'agreement',
   NEG: 'polarity',
   DEF: 'definiteness', INDEF: 'definiteness',
   ACC: 'case', DAT: 'case', GEN: 'case',
@@ -47,7 +47,7 @@ function stemOf(context: WordContext, paradigms: Paradigms): string | undefined 
   if (!table) return undefined
   const profile = profileOf(language)
   const isVerb = lexeme.category === 'V' || lexeme.category === 'V2'
-  const citation = table[isVerb ? profile.citation.verb : profile.citation.noun]
+  const citation = table[isVerb ? profile.citation.verb : lexeme.category === 'A' ? profile.citation.adjective : profile.citation.noun]
   if (!citation) return undefined
   return isVerb && profile.infinitiveEnding ? citation.replace(new RegExp(profile.infinitiveEnding), '') : citation
 }
@@ -80,6 +80,12 @@ export function segmentWord(context: WordContext, paradigms: Paradigms): Morphem
       zeroAgreement ? agreement : [])
   }
   if (!features.length) return [piece(text, 'stem')]
+
+  // Adjectives: citation stem + agreement ending (groß·e, stor·a); a changed stem (små, gott) carries it whole.
+  if (lexeme.category === 'A') {
+    if (text === stem) return [piece(text, 'stem')]
+    return text.startsWith(stem) ? [piece(stem, 'stem'), piece(text.slice(stem.length), 'affix', features)] : [piece(text, 'changed-stem', features)]
+  }
 
   // Participle circumfix (German ge·STEM·en / ge·STEM·t): both halves carry the feature.
   const circumfix = profile.circumfix

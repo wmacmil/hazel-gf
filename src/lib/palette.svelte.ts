@@ -21,7 +21,9 @@ export const POS_FAMILIES = {
   pronoun: { label: 'pronoun', sorts: ['Pron'], hue: 262 },
   determiner: { label: 'determiner', sorts: ['Det'], hue: 48 },
   verb: { label: 'verb', sorts: ['V', 'V2', 'VP'], hue: 138 },
-  adposition: { label: 'adposition', sorts: ['Prep', 'Adv'], hue: 176 },
+  adjective: { label: 'adjective', sorts: ['A', 'AP', 'AdA'], hue: 88 },
+  adposition: { label: 'adverbial · adposition', sorts: ['Prep', 'Adv'], hue: 176 },
+  conjunction: { label: 'conjunction', sorts: ['Conj'], hue: 340 },
   clause: { label: 'clause', sorts: ['S', 'Cl'], hue: 300 },
   functional: { label: 'tense · polarity', sorts: ['Temp', 'Pol'], hue: 20 },
 } as const satisfies Record<string, { label: string; sorts: readonly CategoryId[]; hue: number }>

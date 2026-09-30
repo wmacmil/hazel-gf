@@ -88,6 +88,19 @@ leaf is placed, focus moves to the next hole. See
 [docs/writing-and-decks.md](docs/writing-and-decks.md) for sentence entry,
 decks, and practice (designed, not built yet).
 
+## Grammar
+
+Nouns (15), verbs (9 intransitive, 6 transitive — German *helfen* governs
+the dative), adjectives (6, attributive `AdjCN`, predicative `UseAP`, with
+`very`), adverbs (*here, today, often*), quantifiers (*every, some*),
+existentials (`ExistNP`: *there is / es gibt / det finns*), and coordination of
+noun phrases and sentences (*and, or*). Every lexical leaf has explicit
+paradigm arguments. A coordinated sentence is annotated clause by clause (own
+tense, polarity, subject); subject agreement comes from the subject's
+structure (a coordinated subject is plural). The oracle is a stratified sample
+(22k sentences) covering every operation; `constructions.<code>.txt` is the
+reviewed segmentation of the new constructions.
+
 ## Prepositional phrases
 
 `PrepNP : (Prep, NP) → Adv`, `AdvVP : (VP, Adv) → VP`, `AdvCN : (CN, Adv) → CN`,

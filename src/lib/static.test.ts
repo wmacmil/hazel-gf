@@ -1,30 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { agreementExample, exampleDocument } from './examples'
 import { fromGfTerm, toGfTerm } from './editor'
-import { producers } from './grammar'
+import { CONSTRUCTORS, producers } from './grammar'
 import { normalizeLinearizations, type RawLinearization } from './projection'
 import { phraseBoxes } from './boxes'
-import type { ApplyNode, CategoryId } from './model'
+import type { ApplyNode } from './model'
 import { grammarJson, oracleIndex, oracleShard, oracleTable, paradigms } from './oracle.testkit'
 import { linearizeInBrowser, loadBrowserGrammar } from './browser-gf'
 import { LANGUAGE_IDS } from './languages'
 
 /** A complete term is `MkS <Temp> <Pol> (...)`; the Temp constructor names its oracle shard. */
-const tenseOf = (term: string) => term.split(' ')[1]
+const tenseOf = (term: string) => term.match(/MkS (\w+)/)![1]
 const shards = oracleIndex.shards
 const table = oracleTable()
 
-/** Number of complete PP-free trees of a category, counted from the editor's own palette (adverbials recurse). */
-function completeTrees(category: CategoryId): number {
-  return producers(category).filter(constructor => !constructor.inputs.includes('Adv')).reduce(
-    (total, constructor) => total + constructor.inputs.reduce((product, input) => product * completeTrees(input), 1), 0)
-}
-
 describe('precomputed static linearizations', () => {
-  it('covers exactly the PP-free S trees the editor can build, plus the PP sample', () => {
-    expect(oracleIndex.plain).toBe(completeTrees('S'))
+  it('covers every operation of the grammar at least once (the oracle is a stratified sample)', () => {
+    const used = new Set(Object.keys(table).flatMap(term => term.match(/[A-Z]\w*/g) ?? []))
+    const missing = CONSTRUCTORS.map(item => item.id).filter(id => !used.has(id))
+    expect(missing).toEqual([])
     expect(Object.keys(table)).toHaveLength(oracleIndex.trees)
-    expect(Object.keys(table).filter(term => !term.includes('Adv'))).toHaveLength(oracleIndex.plain)
   })
 
   it('shards by tense so each tree is found in its own shard', () => {

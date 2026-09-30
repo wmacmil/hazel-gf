@@ -13,9 +13,11 @@ export type LanguageProfile = {
   code: string
   label: string
   /** Paradigm cells (from `l -table`) holding the citation form of verbs and nouns. */
-  citation: { verb: string; noun: string }
+  citation: { verb: string; noun: string; adjective: string }
   /** Regex source stripped from the verb citation to get its stem (German -en, Swedish -a). */
   infinitiveEnding: string
+  /** The existential's dummy subject (there / es / det): part of the clause, not a verb. */
+  expletive: string
   /** Regex source for words that realize negative polarity. */
   negation: string
   /** Regex source for negation fused into an auxiliary (English n't); such words stay auxiliaries. */

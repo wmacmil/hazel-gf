@@ -8,8 +8,8 @@ import type { RawLinearization } from './projection'
 const app = resolve(__dirname, '../..')
 const shards = new Map<string, Record<string, RawLinearization[]>>()
 
-/** { shards: tense names, trees: all oracle trees, plain: the PP-free ones }. */
-export const oracleIndex = JSON.parse(readFileSync(resolve(app, 'oracle/index.json'), 'utf8')) as { shards: string[]; trees: number; plain: number }
+/** { shards: first-clause tense names, trees: all oracle trees, strata: trees per construction }. */
+export const oracleIndex = JSON.parse(readFileSync(resolve(app, 'oracle/index.json'), 'utf8')) as { shards: string[]; trees: number; strata: Record<string, number> }
 
 export function oracleShard(tense: string): Record<string, RawLinearization[]> {
   if (!shards.has(tense)) {
