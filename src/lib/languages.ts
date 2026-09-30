@@ -12,11 +12,11 @@ export type LanguageProfile = {
   /** ISO code, matching the parent app's registry. */
   code: string
   label: string
-  /** Paradigm cells (from `l -table`) holding the citation form of verbs and nouns. */
-  citation: { verb: string; noun: string; adjective: string }
+  /** Paradigm cells (from `l -table`) holding the citation form of verbs, nouns, adjectives, and the bare comparative. */
+  citation: { verb: string; noun: string; adjective: string; comparative: string }
   /** Regex source stripped from the verb citation to get its stem (German -en, Swedish -a). */
   infinitiveEnding: string
-  /** The existential's dummy subject (there / es / det): part of the clause, not a verb. */
+  /** Regex source for the existential's dummy words (there / es / det / il y): part of the clause, not verbs. */
   expletive: string
   /** Regex source for words that realize negative polarity. */
   negation: string
@@ -29,9 +29,17 @@ export type LanguageProfile = {
     markedIn: string[] | 'all'
   }
   /** Personal endings read off paradigm rows (German): row prefix per tense label, ending per person. */
-  personalEndings?: { rows: Record<string, string>; endings: Record<string, string> }
+  personalEndings?: {
+    rows: Record<string, string>
+    /** Ending per person; a list where it depends on the conjugation class (French -e / -t). */
+    endings: Record<string, string | string[]>
+    /** `ending`: split a clean stem + listed ending before trying the row's common prefix (French). */
+    prefer?: 'ending'
+  }
   /** A participle circumfix split into two pieces (German ge-…-en). */
   circumfix?: { feature: string; prefix: string; suffixes: string[] }
+  /** The base (unagreeing) participle cell; a participle in another form agrees (French venu → venue). */
+  participleAgreement?: string
   /** Definiteness realized as a noun suffix (Swedish kvinna·n) rather than a separate word. */
   suffixedDefiniteness?: boolean
   /** Citation words for the browser's preview of incomplete trees. */

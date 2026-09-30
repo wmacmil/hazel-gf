@@ -40,6 +40,9 @@
    *          concrete) or pos (hue = part of speech, shade = abstract vs concrete);
    * lines — languages as columns (l1 | l2 | l3) or rows; auto picks columns
    *         while every sentence is short.
+   * boxes — the phrase-box tree under each sentence: shown, folded (just the
+   *         sentences, side by side), or auto (folded once the tree has no
+   *         holes left). `z` flips it.
    */
   const OPTIONS = {
     mode: ['view', 'edit'],
@@ -47,9 +50,10 @@
     layout: ['right', 'left', 'above', 'below'],
     lines: ['auto', 'columns', 'rows'],
     colors: ['channels', 'pos'],
+    boxes: ['shown', 'auto', 'folded'],
   } as const
   type Setting = keyof typeof OPTIONS
-  let settings = $state<{ [key in Setting]: (typeof OPTIONS)[key][number] }>({ mode: 'view', operad: 'flow', layout: 'right', lines: 'auto', colors: 'channels' })
+  let settings = $state<{ [key in Setting]: (typeof OPTIONS)[key][number] }>({ mode: 'view', operad: 'flow', layout: 'right', lines: 'auto', colors: 'channels', boxes: 'shown' })
 
   function setSetting<K extends Setting>(key: K, value: (typeof OPTIONS)[K][number]) {
     settings = { ...settings, [key]: value }
@@ -204,6 +208,7 @@
   /** Width of the sentences pane, measured live; `lines: auto` uses columns only when every sentence fits. */
   let linesWidth = $state(0)
   const fit = $derived(columnFit(projections, linesWidth))
+  const boxesFolded = $derived(settings.boxes === 'folded' || (settings.boxes === 'auto' && isComplete(document.root)))
   const lineOrientation = $derived<'row' | 'column'>(
     settings.lines === 'columns' ? 'column'
       : settings.lines === 'rows' ? 'row'
@@ -363,6 +368,7 @@
         return
       }
       case 'camera.fit': fitSeq += 1; return
+      case 'view.fold': return setSetting('boxes', boxesFolded ? 'shown' : 'folded')
       case 'edit.insert': return openGraft('insert')
       case 'edit.graft': return openGraft('graft')
       case 'edit.extend': return openGraft('extend')
@@ -513,7 +519,7 @@
       <div class="status" class:offline={runtimeState === 'offline'}>
         <span></span>{runtimeState === 'online' ? runtime.label : runtimeState === 'offline' ? 'GF offline · preview only' : 'connecting'}
       </div>
-      <div class="region-chip" data-region={region} title="Tab switches region · hjkl moves in its tree · s/d moves along the sentence · [ ] changes language · = fits · i insert · g graft · e extend · x cut to bench · a new fragment">
+      <div class="region-chip" data-region={region} title="Tab switches region · hjkl moves in its tree · s/d moves along the sentence · [ ] changes language · = fits · i insert · g graft · e extend · x cut to bench · a new fragment · z fold the phrase boxes">
         <span>focus</span><b>{region}</b><kbd>hjkl</kbd><kbd>s d</kbd><kbd>[ ]</kbd><kbd>⇥</kbd><kbd>i g e x a</kbd>
       </div>
       <div class="view-settings">
@@ -595,7 +601,7 @@
         {/if}
         <div class="sentence-lines {lineOrientation}" style:--languages={projections.length} bind:clientWidth={linesWidth}>
           {#each projections as projection, index (projection.language)}
-            <AlgebraRow active={region === 'sentence' && index === Math.min(activeLanguage, projections.length - 1)} {projection} root={document.root} focus={document.focus} {linked} {pinned} orientation={lineOrientation} scale={lineOrientation === 'column' ? fit.scale : undefined} onFocus={focus} onHover={ids => linked = ids} onPin={pin} />
+            <AlgebraRow folded={boxesFolded} active={region === 'sentence' && index === Math.min(activeLanguage, projections.length - 1)} {projection} root={document.root} focus={document.focus} {linked} {pinned} orientation={lineOrientation} scale={lineOrientation === 'column' ? fit.scale : undefined} onFocus={focus} onHover={ids => linked = ids} onPin={pin} />
           {/each}
         </div>
         {#if error}<p class="error">{error}</p>{/if}

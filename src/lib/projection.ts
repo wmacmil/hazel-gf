@@ -63,13 +63,33 @@ function bracketLeaves(brackets: RawBracket[]): LeafGroup[] {
   return groups
 }
 
-function inSurfaceOrder(segments: LinearizedSegment[], surface: string): LinearizedSegment[] {
+/** GF's BIND token: the next token attaches to the previous one with no space (French l'·homme, n'·est). */
+export const BIND = '&+'
+
+/**
+ * Order segments as the surface reads. A surface word may be several bound
+ * segments (*l'homme* = `l'` + `homme`): a segment that binds to the next
+ * (`binds`) is matched as a prefix of the word, and the rest of the word is
+ * matched after it; the attached segment is marked `bound`.
+ */
+function inSurfaceOrder(segments: LinearizedSegment[], surface: string, binds: Set<string>): LinearizedSegment[] {
   const remaining = [...segments]
   const ordered: LinearizedSegment[] = []
   const key = (text: string) => text.toLocaleLowerCase().replace(/^[“”"'.,!?;:]+|[“”"'.,!?;:]+$/g, '')
   for (const word of surface.split(/\s+/).filter(Boolean)) {
-    const index = remaining.findIndex(segment => key(segment.text) === key(word))
-    if (index >= 0) ordered.push(...remaining.splice(index, 1))
+    let rest = word
+    let attached = false
+    while (rest) {
+      const whole = remaining.findIndex(segment => key(segment.text) === key(rest))
+      if (whole >= 0) { const [segment] = remaining.splice(whole, 1); if (attached) segment.bound = true; ordered.push(segment); break }
+      const prefix = remaining.findIndex(segment => binds.has(segment.id) && rest.toLocaleLowerCase().startsWith(segment.text.toLocaleLowerCase()))
+      if (prefix < 0) break
+      const [segment] = remaining.splice(prefix, 1)
+      if (attached) segment.bound = true
+      ordered.push(segment)
+      rest = rest.slice(segment.text.length)
+      attached = true
+    }
   }
   return [...ordered, ...remaining]
 }
@@ -173,7 +193,7 @@ function annotateClause(language: LanguageId, clause: Clause, structural: Set<st
     : undefined
   const verbSegment = verb && clause.segments.find(item => item.realizedBy.includes(verb.id))
   const auxiliaries = clause.segments.filter(segment => segment.role === 'overt' && structural.has(segment.realizedBy[0])
-    && !isBareNegation(language, segment.text) && segment.text.toLowerCase() !== profile.expletive)
+    && !isBareNegation(language, segment.text) && !new RegExp(`^(${profile.expletive})$`, 'i').test(segment.text))
   const finite = auxiliaries[0] ?? verbSegment
   if (!finite) return
 
@@ -215,15 +235,56 @@ function annotateAdjectives(language: LanguageId, root: Node, segments: Lineariz
   const nounIn = (node: Node) => preorder(node).find(item => item.kind === 'apply' && item.output === 'N')
   const mark = (adjective: ApplyNode | undefined, controller: Node | undefined) => {
     const segment = adjective && segments.find(item => item.realizedBy[0] === adjective.id)
-    const citation = adjective && tables[adjective.constructor]?.[citationCell]
+    // A comparative agrees only if it differs from the bare comparative (größere, not predicative größer).
+    const cell = segment?.featureValues.includes('CMP') ? profileOf(language).citation.comparative : citationCell
+    const citation = adjective && tables[adjective.constructor]?.[cell]
     if (!segment || !citation || segment.text === citation) return
+    // A variant chosen by the next word (French vieil before a vowel) is allomorphy, not agreement.
+    const cells = Object.entries(tables[adjective!.constructor] ?? {}).filter(([, form]) => form === segment.text).map(([name]) => name)
+    if (cells.length && cells.every(name => name.startsWith('pre '))) return
     if (!segment.featureValues.includes('AGR')) segment.featureValues.push('AGR')
     control(controllers, segment, 'agreement', controller?.id)
+  }
+  // Degree: a comparative's adjective carries CMP, controlled by the comparative (ComparA brings *than* too).
+  // Synthetic (big·ger, größer, meilleur) marks the adjective; analytic (plus grand) marks the degree word before it.
+  for (const comparative of [...findApply(root, 'ComparA'), ...findApply(root, 'UseComparA')]) {
+    const adjective = comparative.children[0]
+    const segment = segments.find(item => item.realizedBy[0] === adjective.id)
+    if (!segment || adjective.kind !== 'apply') continue
+    const form = tables[adjective.constructor]?.[profileOf(language).citation.comparative]
+    const position = segments.indexOf(segment)
+    const marked = form && segment.text.toLocaleLowerCase().startsWith(form.toLocaleLowerCase())
+      ? [segment]
+      : segments.filter((item, index) => index < position && item.realizedBy[0] === comparative.id)
+    for (const word of marked) {
+      if (!word.featureValues.includes('CMP')) word.featureValues.push('CMP')
+      control(controllers, word, 'degree', comparative.id)
+    }
   }
   for (const modified of findApply(root, 'AdjCN')) mark(adjectiveIn(modified.children[0]), nounIn(modified.children[1]))
   for (const predicate of findApply(root, 'PredVP')) {
     const vp = predicate.children[1]
     if (vp.kind === 'apply' && vp.constructor === 'UseAP') mark(adjectiveIn(vp), nounIn(predicate.children[0]) ?? predicate.children[0])
+  }
+}
+
+/**
+ * Participle agreement (French elle est venu·e, je l'ai vu·e): a participle
+ * whose form differs from the profile's base participle cell agrees — with
+ * the object of a transitive verb (the preceding clitic), else the subject.
+ */
+function annotateParticiples(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms: Paradigms, controllers: Controllers) {
+  const base = profileOf(language).participleAgreement
+  if (!base) return
+  const tables = paradigms.tables[language] ?? {}
+  for (const predication of findApply(root, 'PredVP')) {
+    const verb = preorder(predication.children[1]).find((node): node is ApplyNode => node.kind === 'apply' && (node.output === 'V' || node.output === 'V2'))
+    const segment = verb && segments.find(item => item.realizedBy[0] === verb.id && item.featureValues.includes('PTCP'))
+    const form = verb && tables[verb.constructor]?.[base]
+    if (!segment || !form || segment.text === form) continue
+    const object = findApply(predication.children[1], 'ComplV2')[0]?.children[1]
+    if (!segment.featureValues.includes('AGR')) segment.featureValues.push('AGR')
+    control(controllers, segment, 'agreement', (object ?? predication.children[0]).id)
   }
 }
 
@@ -283,6 +344,16 @@ function annotateCase(language: LanguageId, root: Node, segments: LinearizedSegm
 function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[], paradigms?: Paradigms): LinearizedSegment[] {
   let result = segments.map(segment => ({ ...segment, realizedBy: [...segment.realizedBy], categories: [...segment.categories], featureValues: [...segment.featureValues] }))
 
+  // GF can emit a preposition as part of the article's form (French à la = the Det's dative cell);
+  // a word that is the preposition's own form realizes the preposition, not the article.
+  for (const phrase of findApply(root, 'PrepNP')) {
+    const prep = phrase.children[0]
+    if (prep.kind !== 'apply' || result.some(segment => segment.realizedBy.includes(prep.id))) continue
+    const own = (profileOf(language).partialLexicon[prep.constructor] ?? '').split('/').map(word => word.trim().toLocaleLowerCase()).filter(Boolean)
+    const inside = descendantIds(phrase.children[1])
+    const first = result.find(segment => segment.role === 'overt' && inside.has(segment.realizedBy[0]))
+    if (first && own.includes(first.text.toLocaleLowerCase())) { first.realizedBy = [prep.id]; first.categories = ['Prep'] }
+  }
   for (const det of findApply(root, 'Definite')) {
     const segment = result.find(item => item.realizedBy.includes(det.id))
     if (segment && !segment.featureValues.includes('DEF')) segment.featureValues.push('DEF')
@@ -305,13 +376,12 @@ function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[
 
   const controllers: Controllers = new Map()
   const clauses = clausesOf(root, result)
-  // Negation per clause: the word that realizes that clause's Pol (nicht, inte, doesn't).
+  // Negation per clause: the words that realize that clause's Pol (nicht, inte, doesn't; both halves of ne … pas).
   for (const clause of clauses) {
     const pol = clause.pol
     if (pol?.constructor !== 'Negative') continue
-    const segment = clause.segments.find(item => item.realizedBy.includes(pol.id))
-      ?? clause.segments.find(item => isNegationWord(language, item.text))
-    if (segment) {
+    const own = clause.segments.filter(item => item.realizedBy.includes(pol.id))
+    for (const segment of own.length ? own : clause.segments.filter(item => isNegationWord(language, item.text))) {
       if (!segment.realizedBy.includes(pol.id)) segment.realizedBy.push(pol.id)
       if (!segment.categories.includes('Pol')) segment.categories.unshift('Pol')
       if (!segment.featureValues.includes('NEG')) segment.featureValues.push('NEG')
@@ -321,9 +391,20 @@ function annotate(language: LanguageId, root: Node, segments: LinearizedSegment[
     for (const [segmentId, governor] of annotateCase(language, root, result, paradigms)) controllers.set(segmentId, { ...controllers.get(segmentId), case: governor })
   }
   // realizedBy[0] is GF's own bracket attribution; later entries were added by annotation.
-  const structural = new Set(preorder(root).filter(node => node.kind === 'apply' && node.children.length).map(node => node.id))
+  // Auxiliaries come from clause- and verb-phrase-level nodes only: words a phrase inside
+  // an argument emits (than/als, plus, que) are not verbs.
+  const structural = new Set(preorder(root).filter(node => node.kind === 'apply' && node.children.length && ['S', 'Cl', 'VP'].includes(node.output)).map(node => node.id))
   for (const clause of clauses) annotateClause(language, clause, structural, controllers)
+  // A preposition GF fused into the article (French au = à + le) is realized by that word.
+  for (const phrase of findApply(root, 'PrepNP')) {
+    const prep = phrase.children[0]
+    if (result.some(segment => segment.realizedBy.includes(prep.id))) continue
+    const inside = descendantIds(phrase.children[1])
+    const first = result.find(segment => segment.role === 'overt' && inside.has(segment.realizedBy[0]))
+    if (first) { first.realizedBy.push(prep.id); if (!first.categories.includes('Prep')) first.categories.push('Prep') }
+  }
   if (paradigms) {
+    annotateParticiples(language, root, result, paradigms, controllers)
     annotateAdjectives(language, root, result, paradigms, controllers)
     attachMorphemes(language, root, result, paradigms, controllers)
   }
@@ -366,6 +447,7 @@ function normalizeOne(raw: RawLinearization, root: Node, revision: number, parad
   const occurrence = new Map<string, number>()
   let serial = 0
   const base: LinearizedSegment[] = []
+  const binds = new Set<string>()
   for (const leaf of bracketLeaves(assignNodes(raw.brackets, root))) {
     // Exact node when the runtime supplies it; otherwise the n-th node with that constructor.
     const index = occurrence.get(leaf.fun) ?? 0
@@ -373,6 +455,7 @@ function normalizeOne(raw: RawLinearization, root: Node, revision: number, parad
     const node = (leaf.node && nodeById.get(leaf.node)) || candidates[Math.min(index, Math.max(0, candidates.length - 1))]
     occurrence.set(leaf.fun, index + 1)
     for (const token of leaf.tokens) {
+      if (token === BIND) { const previous = base.at(-1); if (previous) binds.add(previous.id); continue }
       base.push({
         id: `${language}-${serial++}`,
         text: token,
@@ -383,7 +466,7 @@ function normalizeOne(raw: RawLinearization, root: Node, revision: number, parad
       })
     }
   }
-  const segments = annotate(language, root, inSurfaceOrder(base, raw.text), paradigms)
+  const segments = annotate(language, root, inSurfaceOrder(base, raw.text, binds), paradigms)
   return { language, text: raw.text, segments, nodeYields: buildYields(root, segments), revision, source: 'gf' }
 }
 

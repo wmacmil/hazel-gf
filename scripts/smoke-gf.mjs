@@ -12,7 +12,7 @@ for (const profile of profiles) {
   for (const { term, text } of profile.smoke) {
     const output = execFileSync('gf', ['--run', resolve(appDir, 'public/HazelGF.pgf')], {
       input: `l -lang=${profile.id} ${term}\nq\n`, encoding: 'utf8',
-    }).trim()
+    }).trim().replace(/\s*&\+\s*/g, '') // the GF shell prints BIND literally (l' &+ homme); the server and the browser join it
     const ok = output === text
     if (!ok) failures++
     console.log(`${ok ? 'ok  ' : 'FAIL'} ${profile.id}: ${output}${ok ? '' : `   (expected: ${text})`}`)

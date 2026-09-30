@@ -49,6 +49,8 @@ export type LinearizedSegment = {
   categories: CategoryId[]
   featureValues: string[]
   morphemes?: Morpheme[]
+  /** Attached to the previous word with no space (GF BIND: French l'·homme). */
+  bound?: boolean
 }
 
 export type LinearizationProjection = {

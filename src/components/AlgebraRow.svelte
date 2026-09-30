@@ -7,8 +7,10 @@
   import { sortColor } from '../lib/palette.svelte'
 
   let {
-    projection, root, focus, linked = [], pinned = [], orientation = 'row', scale, active = false, onFocus, onHover, onPin,
+    projection, root, focus, linked = [], pinned = [], orientation = 'row', scale, active = false, folded = false, onFocus, onHover, onPin,
   }: {
+    /** Hide the phrase-box tree: just the sentence (its words still highlight with focus). */
+    folded?: boolean
     projection: LinearizationProjection
     root: Node
     focus: NodeId
@@ -25,7 +27,7 @@
     onPin: (features: string[]) => void
   } = $props()
 
-  const boxes = $derived(phraseBoxes(root, projection))
+  const boxes = $derived(folded ? [] : phraseBoxes(root, projection))
 
   // Fit to width: natural (scale 1) width of the words vs the width available.
   let available = $state(0)
@@ -33,6 +35,7 @@
   let natural = $state(0)
   $effect(() => {
     void projection
+    void folded
     if (!content) return
     // The whole grid (words and phrase boxes), unscaled.
     const zoom = Number(getComputedStyle(content).zoom) || 1
@@ -46,7 +49,7 @@
     [focus, ...linked].some(id => (projection.nodeYields[id] ?? []).includes(segmentId))
 </script>
 
-<section class="algebra-row" class:partial={projection.source === 'partial'} class:column={orientation === 'column'} class:active-line={active}>
+<section class="algebra-row" class:folded class:partial={projection.source === 'partial'} class:column={orientation === 'column'} class:active-line={active}>
   <div class="language">
     <strong>{profileOf(projection.language).label}</strong>
     <span>{projection.source === 'gf' ? 'GF algebra' : 'typed preview'}</span>
@@ -97,8 +100,10 @@
   .fit::-webkit-scrollbar-track { background: #efe9df; border-radius: 4px; }
   .fit::-webkit-scrollbar-thumb { background: #a89e8f; border-radius: 4px; }
   @supports not selector(::-webkit-scrollbar) { .fit { scrollbar-width: thin; scrollbar-color: #a89e8f #efe9df; } }
-  .grid { display: grid; width: max-content; max-width: none; column-gap: .4rem; row-gap: 3px; align-items: start; padding-bottom: .2rem; }
+  .grid { --word-gap: .4rem; display: grid; width: max-content; max-width: none; column-gap: var(--word-gap); row-gap: 3px; align-items: start; padding-bottom: .2rem; }
   .cell { grid-row: 1; margin-bottom: .45rem; }
+  .folded .cell { margin-bottom: 0; }
+  .algebra-row.folded { padding: .55rem 0 .6rem; }
   /* The operad's image on the paper: hairline boxes in the sort's (cool) hue. */
   .box {
     /* contain: inline-size keeps labels from widening the word columns. */

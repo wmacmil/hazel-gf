@@ -174,6 +174,25 @@ try {
   truthy('parse box: answers in seconds even after heavy graft parsing', Date.now() - sentenceStart < 5000)
   await page.getByLabel('Sentence to parse').fill('')
 
+  // 3g. Folding the phrase boxes: z flips them; auto folds a finished sentence, unfolds one with holes.
+  await page.goto(`${BASE}?example=agreement&mode=view&operad=flow&layout=right&lines=auto&boxes=shown`)
+  await page.waitForSelector('.algebra-row .box'); await page.waitForTimeout(500)
+  const boxCount = () => page.locator('.algebra-row .box').count()
+  truthy('fold: phrase boxes shown', await boxCount() > 0)
+  await page.locator('.svelte-flow__node').first().click(); await settle()
+  await page.keyboard.press('z'); await settle()
+  expect('fold: z folds every sentence to its words', await boxCount(), 0)
+  truthy('fold: the words stay', await page.locator('.algebra-row .word').count() > 0)
+  await page.keyboard.press('z'); await settle()
+  truthy('fold: z unfolds', await boxCount() > 0)
+  await page.goto(`${BASE}?example=agreement&mode=edit&operad=flow&layout=right&lines=auto&boxes=auto`)
+  await page.waitForSelector('.algebra-row .word'); await page.waitForTimeout(500)
+  expect('fold: auto folds a complete sentence', await boxCount(), 0)
+  await page.locator('.worked select').selectOption('blank sentence'); await settle()
+  truthy('fold: auto unfolds while holes remain', await boxCount() > 0)
+  await page.goto(`${BASE}?example=agreement&mode=view&operad=flow&layout=right&lines=auto&boxes=shown`)
+  await page.waitForSelector('.algebra-row .box')
+
   // 3d. The builder: send, cut a wire, re-plug by dragging, refuse a wrong sort, adopt.
   await page.goto(`${BASE}?example=agreement&mode=view&operad=builder&layout=above&lines=auto`)
   await page.waitForSelector('.builder'); await page.waitForTimeout(600)

@@ -5,6 +5,9 @@
   a `// @ts-nocheck` header so this app's strict type-check skips them, and one
   added method, `GFConcrete.parseTokens` (marked "hazel-gf addition"), which
   reports how many tokens parsed before a failure.
+  One bug fix (marked "hazel-gf fix"): in `pre { … }` linearization only the first
+  matching alternative is emitted, as in GF (upstream emitted every match: French
+  *le vieil vieil homme*).
 - Author: John J. Camilleri. License: LGPL-3.0-or-later
   (https://www.gnu.org/licenses/lgpl-3.0.html), as declared in the upstream package.json.
 

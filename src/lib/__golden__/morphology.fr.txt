@@ -1,0 +1,36 @@
+SleepV HePron Present        il ~dor·t[PRES·3SG]
+SleepV HePron Past           il dorm·ai[PAST]·t[3SG]
+SleepV HePron PresentPerfect il a[PRES·PERF·3SG] dorm·i[PTCP]
+SleepV IPron  Present        je ~dor·s[PRES]
+SleepV IPron  Past           je dorm·ai[PAST]·s
+SleepV IPron  PresentPerfect j' ai[PRES·PERF] dorm·i[PTCP]
+WalkV  HePron Present        il march·e[PRES·3SG]
+WalkV  HePron Past           il march·ai[PAST]·t[3SG]
+WalkV  HePron PresentPerfect il a[PRES·PERF·3SG] march·é[PTCP]
+WalkV  IPron  Present        je march·e[PRES]
+WalkV  IPron  Past           je march·ai[PAST]·s
+WalkV  IPron  PresentPerfect j' ai[PRES·PERF] march·é[PTCP]
+RunV   HePron Present        il cour·t[PRES·3SG]
+RunV   HePron Past           il cour·ai[PAST]·t[3SG]
+RunV   HePron PresentPerfect il a[PRES·PERF·3SG] cour·u[PTCP]
+RunV   IPron  Present        je cour·s[PRES]
+RunV   IPron  Past           je cour·ai[PAST]·s
+RunV   IPron  PresentPerfect j' ai[PRES·PERF] cour·u[PTCP]
+SeeV2  HePron Present        il la[ACC] ~voi·t[PRES·3SG]
+SeeV2  HePron Past           il la[ACC] voy·ai[PAST]·t[3SG]
+SeeV2  HePron PresentPerfect il l' a[PRES·PERF·3SG] ~vu[PTCP]·e[AGR]
+SeeV2  IPron  Present        je la[ACC] ~voi·s[PRES]
+SeeV2  IPron  Past           je la[ACC] voy·ai[PAST]·s
+SeeV2  IPron  PresentPerfect je l' ai[PRES·PERF] ~vu[PTCP]·e[AGR]
+LoveV2 HePron Present        il l' aim·e[PRES·3SG]
+LoveV2 HePron Past           il l' aim·ai[PAST]·t[3SG]
+LoveV2 HePron PresentPerfect il l' a[PRES·PERF·3SG] aim·é[PTCP]·e[AGR]
+LoveV2 IPron  Present        je l' aim·e[PRES]
+LoveV2 IPron  Past           je l' aim·ai[PAST]·s
+LoveV2 IPron  PresentPerfect je l' ai[PRES·PERF] aim·é[PTCP]·e[AGR]
+ReadV2 HePron Present        il li·t[PRES·3SG] le[DEF] livre
+ReadV2 HePron Past           il lis·ai[PAST]·t[3SG] le[DEF] livre
+ReadV2 HePron PresentPerfect il a[PRES·PERF·3SG] ~lu[PTCP] le[DEF] livre
+ReadV2 IPron  Present        je li·s[PRES] le[DEF] livre
+ReadV2 IPron  Past           je lis·ai[PAST]·s le[DEF] livre
+ReadV2 IPron  PresentPerfect j' ai[PRES·PERF] ~lu[PTCP] le[DEF] livre

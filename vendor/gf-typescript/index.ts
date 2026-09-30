@@ -520,18 +520,17 @@ class GFConcrete {
             let nextSym = syms[i+1]
             if (nextSym.id == 'KS') {
               let nextToken = (nextSym as SymKS).tokens[0]
-              sym.alts.forEach((alt: Alt): void => {
-                // consider alts here (for handling pre)
-                if (alt.prefixes.some((p: string): boolean => nextToken.startsWith(p))) {
-                  alt.tokens.forEach((symks: SymKS): void => {
-                    symks.tokens.forEach((t: string): void => {
-                      ts.push(new TaggedString(t, sym.tag as string))
-                    })
+              // hazel-gf fix: the first matching alternative wins, as in GF (upstream's
+              // `return` inside forEach let every matching alt emit: "le vieil vieil homme").
+              const alt = sym.alts.find((alt: Alt): boolean => alt.prefixes.some((p: string): boolean => nextToken.startsWith(p)))
+              if (alt) {
+                alt.tokens.forEach((symks: SymKS): void => {
+                  symks.tokens.forEach((t: string): void => {
+                    ts.push(new TaggedString(t, sym.tag as string))
                   })
-                  addedAlt = true
-                  return
-                }
-              })
+                })
+                addedAlt = true
+              }
             }
           }
           if (addedAlt) break

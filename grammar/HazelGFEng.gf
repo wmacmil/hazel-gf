@@ -16,6 +16,7 @@ concrete HazelGFEng of HazelGF = open SyntaxEng, (Syn = SyntaxEng), ParadigmsEng
     UsePron p = mkNP p ;
     PrepNP p np = Syn.mkAdv p np ; AdvVP vp a = Syn.mkVP vp a ; AdvCN cn a = Syn.mkCN cn a ;
     PositA a = Syn.mkAP a ; AdAP ada ap = Syn.mkAP ada ap ; AdjCN ap cn = Syn.mkCN ap cn ;
+    ComparA a np = Syn.mkAP a np ; UseComparA a = Syn.comparAP a ;
     UseAP ap = Syn.mkVP ap ; ExistNP np = Syn.mkCl np ;
     ConjNP c x y = Syn.mkNP c x y ; ConjS c x y = Syn.mkS c x y ;
 

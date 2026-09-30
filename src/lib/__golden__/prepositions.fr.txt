@@ -1,0 +1,50 @@
+InPrep    Present        je ~dor·s[PRES] dans la[DEF] table
+InPrep    Present        je ~dor·s[PRES] dans la[DEF] ville
+InPrep    Present        je ~dor·s[PRES] dans un[INDEF] jardin
+InPrep    Present        je ~dor·s[PRES] dans lui
+InPrep    Present        je ~dor·s[PRES] dans eux
+OnPrep    Present        je ~dor·s[PRES] sur la[DEF] table
+OnPrep    Present        je ~dor·s[PRES] sur la[DEF] ville
+OnPrep    Present        je ~dor·s[PRES] sur un[INDEF] jardin
+OnPrep    Present        je ~dor·s[PRES] sur lui
+OnPrep    Present        je ~dor·s[PRES] sur eux
+WithPrep  Present        je ~dor·s[PRES] avec la[DEF] table
+WithPrep  Present        je ~dor·s[PRES] avec la[DEF] ville
+WithPrep  Present        je ~dor·s[PRES] avec un[INDEF] jardin
+WithPrep  Present        je ~dor·s[PRES] avec lui
+WithPrep  Present        je ~dor·s[PRES] avec eux
+ToPrep    Present        je ~dor·s[PRES] à la[DEF] table
+ToPrep    Present        je ~dor·s[PRES] à la[DEF] ville
+ToPrep    Present        je ~dor·s[PRES] à un[INDEF] jardin
+ToPrep    Present        je ~dor·s[PRES] à lui
+ToPrep    Present        je ~dor·s[PRES] à eux
+UnderPrep Present        je ~dor·s[PRES] sous la[DEF] table
+UnderPrep Present        je ~dor·s[PRES] sous la[DEF] ville
+UnderPrep Present        je ~dor·s[PRES] sous un[INDEF] jardin
+UnderPrep Present        je ~dor·s[PRES] sous lui
+UnderPrep Present        je ~dor·s[PRES] sous eux
+InPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] dans la[DEF] table
+InPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] dans la[DEF] ville
+InPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] dans un[INDEF] jardin
+InPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] dans lui
+InPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] dans eux
+OnPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] sur la[DEF] table
+OnPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] sur la[DEF] ville
+OnPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] sur un[INDEF] jardin
+OnPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] sur lui
+OnPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] sur eux
+WithPrep  PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] avec la[DEF] table
+WithPrep  PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] avec la[DEF] ville
+WithPrep  PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] avec un[INDEF] jardin
+WithPrep  PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] avec lui
+WithPrep  PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] avec eux
+ToPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] à la[DEF] table
+ToPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] à la[DEF] ville
+ToPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] à un[INDEF] jardin
+ToPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] à lui
+ToPrep    PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] à eux
+UnderPrep PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] sous la[DEF] table
+UnderPrep PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] sous la[DEF] ville
+UnderPrep PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] sous un[INDEF] jardin
+UnderPrep PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] sous lui
+UnderPrep PresentPerfect l'[DEF] homme a[PRES·PERF·3SG] march·é[PTCP] sous eux

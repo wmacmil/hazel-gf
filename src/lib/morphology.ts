@@ -12,7 +12,7 @@ export type Paradigms = {
 }
 
 /** Which algebra axis a feature label belongs to; morpheme colors are per axis. */
-export type FeatureAxis = 'tense' | 'aspect' | 'agreement' | 'polarity' | 'definiteness' | 'case'
+export type FeatureAxis = 'tense' | 'aspect' | 'agreement' | 'polarity' | 'definiteness' | 'case' | 'degree'
 
 export const FEATURE_AXES: Record<string, FeatureAxis> = {
   PRES: 'tense', PAST: 'tense', FUT: 'tense', COND: 'tense',
@@ -21,6 +21,7 @@ export const FEATURE_AXES: Record<string, FeatureAxis> = {
   NEG: 'polarity',
   DEF: 'definiteness', INDEF: 'definiteness',
   ACC: 'case', DAT: 'case', GEN: 'case',
+  CMP: 'degree',
 }
 
 export type WordContext = {
@@ -84,7 +85,25 @@ export function segmentWord(context: WordContext, paradigms: Paradigms): Morphem
   // Adjectives: citation stem + agreement ending (groß·e, stor·a); a changed stem (små, gott) carries it whole.
   if (lexeme.category === 'A') {
     if (text === stem) return [piece(text, 'stem')]
+    // A comparative is the stem plus CMP (big·ger), or a changed stem (größer, bättre);
+    // an agreement ending then follows the bare comparative (größer·e).
+    const comparative = features.includes('CMP') ? paradigms.tables[language]?.[lexeme.constructor]?.[profile.citation.comparative] : undefined
+    if (comparative && text.startsWith(comparative)) {
+      const degree = comparative.startsWith(stem) && comparative !== stem
+        ? [piece(stem, 'stem'), piece(comparative.slice(stem.length), 'affix', ['CMP'])]
+        : [piece(comparative, 'changed-stem', ['CMP'])]
+      const rest = features.filter(feature => feature !== 'CMP')
+      return text === comparative ? degree : [...degree, piece(text.slice(comparative.length), 'affix', rest)]
+    }
     return text.startsWith(stem) ? [piece(stem, 'stem'), piece(text.slice(stem.length), 'affix', features)] : [piece(text, 'changed-stem', features)]
+  }
+
+  // An agreeing participle (French venu·e, vu·e): the base participle, then the agreement ending.
+  const participleBase = profile.participleAgreement && aspect.includes('PTCP') && agreement.includes('AGR')
+    ? paradigms.tables[language]?.[lexeme.constructor]?.[profile.participleAgreement] : undefined
+  if (participleBase && text.startsWith(participleBase) && text !== participleBase) {
+    const head = segmentWord({ ...context, text: participleBase, features: features.filter(feature => feature !== 'AGR') }, paradigms)
+    return [...head, piece(text.slice(participleBase.length), 'affix', ['AGR'])]
   }
 
   // Participle circumfix (German ge·STEM·en / ge·STEM·t): both halves carry the feature.
@@ -96,7 +115,7 @@ export function segmentWord(context: WordContext, paradigms: Paradigms): Morphem
     return [piece(circumfix.prefix, 'affix', aspect), piece(middle, middle === stem ? 'stem' : 'changed-stem'), piece(suffix, 'affix', aspect)]
   }
 
-  // Personal endings (German): read off the verb's own paradigm cell.
+  // Personal endings (German, French): read off the verb's own paradigm cell.
   let core = text
   let personal = ''
   const personalEndings = profile.personalEndings
@@ -108,8 +127,15 @@ export function segmentWord(context: WordContext, paradigms: Paradigms): Morphem
     // Syncretic cells (liest = 2SG = 3SG) are resolved by the subject's agreement.
     const cells = row.filter(([, form]) => form === text).map(([name]) => name)
     const cell = (cells.find(name => agreement.includes('3SG') && name.includes('Sg P3')) ?? cells[0])?.match(/(Sg|Pl) (P[123])/)
-    if (rowStem.length >= Math.min(stem.length, text.length) && text.startsWith(rowStem)) personal = text.slice(rowStem.length)
-    else if (cell) personal = personalEndings.endings[`${cell[1]} ${cell[2]}`] ?? ''
+    // A cell may list several endings (French 3SG -e / -t / -d, by conjugation class).
+    const options = cell ? [personalEndings.endings[`${cell[1]} ${cell[2]}`] ?? []].flat() : []
+    // `prefer: 'ending'` (French): a clean lexical stem + listed ending wins (nag·ent, dorm·ons),
+    // where the row's common prefix would cut inside the ending (nage·nt).
+    const clean = personalEndings.prefer === 'ending'
+      ? options.find(ending => ending && text.endsWith(ending) && text.slice(0, -ending.length).startsWith(stem)) : undefined
+    if (clean) personal = clean
+    else if (rowStem.length >= Math.min(stem.length, text.length) && text.startsWith(rowStem)) personal = text.slice(rowStem.length)
+    else personal = options.find(ending => ending && text.endsWith(ending)) ?? ''
     if (!text.endsWith(personal) || personal === text) personal = ''
     core = text.slice(0, text.length - personal.length)
   }
@@ -117,7 +143,20 @@ export function segmentWord(context: WordContext, paradigms: Paradigms): Morphem
   const inflection = [...tense, ...aspect]
   const pieces: Morpheme[] = []
   let marked = false
-  if (core.startsWith(stem)) {
+  // A personal-ending language has no present-tense marker: what lies between the
+  // lexical stem and the ending is the present stem (French voi·s, from vo- in voir).
+  const presentOnly = profile.agreement.realization === 'personal-ending' && inflection.length > 0 && inflection.every(feature => feature === 'PRES')
+  // French: a tense row's own stem (voy·ai·t, lis·ai·t) where it extends the lexical stem.
+  const tenseStem = profile.personalEndings?.prefer === 'ending' && rowPrefix
+    ? commonPrefix(Object.entries(paradigms.tables[language][lexeme.constructor]).filter(([cell]) => cell.startsWith(rowPrefix)).map(([, form]) => form))
+    : ''
+  if (presentOnly && core.startsWith(stem) && core !== stem) {
+    pieces.push(piece(core, 'changed-stem'))
+  } else if (tenseStem.length > stem.length && tenseStem.startsWith(stem) && core.startsWith(tenseStem) && core !== tenseStem) {
+    pieces.push(piece(tenseStem, 'stem'))
+    pieces.push(piece(core.slice(tenseStem.length), 'affix', inflection))
+    marked = true
+  } else if (core.startsWith(stem)) {
     pieces.push(piece(stem, 'stem'))
     const marker = core.slice(stem.length)
     if (marker) {

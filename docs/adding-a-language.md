@@ -33,23 +33,21 @@ grid read the registry.
 - `runtime.conformance.test.ts`: the browser runtime equals the GF server on
   every oracle tree (text, token provenance, morpheme projection).
 
-## French readiness
+## French (landed 2026-09-30)
 
-Probed on 2026-09-29 by compiling a throwaway `HazelGFFre` outside the repo
-(`/tmp/frprobe`) and reading the browser runtime's token tags. French compiles
-against the local RGL (`SyntaxFre.gfo` present). Irregular verbs need
-`ParadigmsFre`'s 7 principal parts (*tenir, tiens, tenons, tiennent, tint,
-tiendra, tenu*). What the probe showed, and what each needs before French lands:
+French was the first language added through this checklist. The 2026-09-29
+probe predicted what it would stress; this is what each needed.
 
-| Output (token@node) | Issue | Needed |
-|---|---|---|
-| `l'@Definite &+@Definite homme@ManN` | GF's BIND token `&+` is emitted literally; gf-typescript's `linearize` does not join it | Join bound tokens in `browser-gf.ts` into one word whose morphemes come from different nodes (*l'·homme* = `Definite` + `ManN`); add `&+` handling to the conformance test |
-| `ne@UseV dort@SleepV pas@UseV` | Negation is two discontinuous tokens, both attributed to `UseV` | `negation: "^(ne|n'|pas)$"`; `annotate` must link **every** matching word to `Pol` (today only the first); the `Pol` phrase box then has two runs |
-| `je@IPron la@ShePron vois@SeeV2` | Object clitic before the verb | Nothing new: the VP box is discontinuous, already supported |
-| `je l'@ShePron ai@PredVP vue@SeeV2` | Past participle agrees with a preceding clitic (*vue* = FEM) | A `gender` feature axis (warm hue), with the object pronoun as its controller |
-| `elle n' a pas marché` | Auxiliary selection (*avoir* here) | For *être* verbs (*aller*, *venir*), declare them with `ParadigmsFre`'s *être* flag; agreement *allée* again needs `gender` |
-| `nous courrons` | Future is synthetic (one word), unlike English/German/Swedish | Verb cells differ: read French `VForm` cells as the parent app's `pipeline/french_verbs.py` does for `gf/rgl-audit/french-verbs/ConjFr.gf` (Bescherelle) and map them in the profile's personal endings |
+| Issue | What was done |
+|---|---|
+| GF's BIND token `&+` (*l' &+ homme*) | The browser runtime's text joins bound tokens as the server does; the projection drops `&+` and marks the next segment `bound`, matching surface words by concatenation. A bound word renders flush against the previous one (dotted seam): *l'·homme* is one written word whose morphemes come from `Definite` and `ManN`. The parser splits typed elisions (*l'homme* → `l'` `homme`) unless the whole word is known (*aujourd'hui*). |
+| *ne … pas*: two words, both attributed to the VP | `negation: "^(ne\|n'\|pas)$"`; every negation word of a negative clause realizes `Pol`, so its phrase box has two runs. |
+| `pre { … }` variants (*vieux/vieil*, *le/l'*, *je/j'*) missing from `l -table` | The oracle adds each leaf's `SymKP` alternatives from the compiled grammar as `pre N` cells. A variant is allomorphy, never agreement. Fixed a vendored gf-typescript bug: every matching alternative was emitted (*le vieil vieil homme*); now the first wins, as in GF. |
+| Participle agreement (*elle est venue*, *je l'ai vue*) | `participleAgreement: "(VPart Masc Sg)"`: a participle in another form carries `AGR` on its ending (*ven·u·e*), controlled by the object (the preceding clitic) or else the subject. |
+| *être* selection | `IrregFre.venir_V` carries it; nothing else needed. |
+| Synthetic future and conditional (*courrons*, *achèterais*) | Profile rows per tense (`PRES`, `PAST` = imparfait, `FUT`, `COND`). Endings are lists per person (3SG *-e / -t / -d* by conjugation class) with `prefer: "ending"`, giving *nag·ent*, *dor·t*, *cour·r·ons*; a tense row's own stem where it extends the lexical one (*voy·ai·t*, *lis·ai·t*); no present-tense marker (*voi·s*). |
+| Preposition inside the article's form (*à la*, *au*) | A word that is the preposition's own form realizes the preposition (*à* + *la[DEF]*); a fused one (*au*) realizes both. |
+| Irregular comparatives (*meilleur*) | The oracle also reads the `compar` field; analytic comparatives put `CMP` on *plus*. |
 
-Agreement in French is a `personal-ending` language like German, but its rows
-are per tense *and* mood; the profile's `personalEndings.rows` will need one
-entry per tense label.
+The goldens (`*.fr.txt`) were reviewed line by line; adding French left the
+English, German, and Swedish goldens byte-identical.

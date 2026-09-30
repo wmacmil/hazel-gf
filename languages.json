@@ -6,7 +6,8 @@
     "citation": {
       "verb": "VInf",
       "noun": "Sg Nom",
-      "adjective": "(AAdj Posit Nom)"
+      "adjective": "(AAdj Posit Nom)",
+      "comparative": "(AAdj Compar Nom)"
     },
     "infinitiveEnding": "",
     "negation": "^(not|\\w+n't)$",
@@ -94,7 +95,8 @@
     "citation": {
       "verb": "(VInf False)",
       "noun": "Sg Nom",
-      "adjective": "Posit APred"
+      "adjective": "Posit APred",
+      "comparative": "Compar APred"
     },
     "infinitiveEnding": "e?n$",
     "negation": "^nicht$",
@@ -201,7 +203,8 @@
     "citation": {
       "verb": "(VI (VInfin Act))",
       "noun": "Sg Indef Nom",
-      "adjective": "(AF (APosit (Strong (GSg Utr))) Nom)"
+      "adjective": "(AF (APosit (Strong (GSg Utr))) Nom)",
+      "comparative": "(AF ACompar Nom)"
     },
     "infinitiveEnding": "a$",
     "negation": "^inte$",
@@ -279,5 +282,127 @@
       }
     ],
     "expletive": "det"
+  },
+  {
+    "id": "HazelGFFre",
+    "code": "fr",
+    "label": "Français",
+    "citation": {
+      "verb": "(VInfin False)",
+      "noun": "Sg",
+      "adjective": "(AF Masc Sg)",
+      "comparative": "compar {g = Masc; n = Sg}"
+    },
+    "infinitiveEnding": "(er|ir|re)$",
+    "negation": "^(ne|n'|pas)$",
+    "agreement": {
+      "realization": "personal-ending",
+      "markedIn": "all"
+    },
+    "personalEndings": {
+      "rows": {
+        "PRES": "(VFin (VPres Indic) ",
+        "PAST": "(VFin (VImperf Indic) ",
+        "FUT": "(VFin VFut ",
+        "COND": "(VFin VCondit "
+      },
+      "endings": {
+        "Sg P1": [
+          "e",
+          "s",
+          "x"
+        ],
+        "Sg P2": [
+          "es",
+          "s",
+          "x"
+        ],
+        "Sg P3": [
+          "e",
+          "t",
+          "d"
+        ],
+        "Pl P1": [
+          "ons"
+        ],
+        "Pl P2": [
+          "ez"
+        ],
+        "Pl P3": [
+          "ent"
+        ]
+      },
+      "prefer": "ending"
+    },
+    "partialLexicon": {
+      "Positive": "",
+      "Negative": "ne … pas",
+      "Definite": "le/la",
+      "Indefinite": "un/une",
+      "IPron": "je",
+      "YouPron": "tu",
+      "HePron": "il",
+      "ShePron": "elle",
+      "WePron": "nous",
+      "TheyPron": "ils",
+      "ManN": "homme",
+      "WomanN": "femme",
+      "HouseN": "maison",
+      "DogN": "chien",
+      "CatN": "chat",
+      "BookN": "livre",
+      "SleepV": "dormir",
+      "WalkV": "marcher",
+      "RunV": "courir",
+      "SeeV2": "voir",
+      "LoveV2": "aimer",
+      "ReadV2": "lire",
+      "TableN": "table",
+      "GardenN": "jardin",
+      "CityN": "ville",
+      "InPrep": "dans",
+      "OnPrep": "sur",
+      "WithPrep": "avec",
+      "ToPrep": "à",
+      "UnderPrep": "sous",
+      "BirdN": "oiseau",
+      "ChildN": "enfant",
+      "AppleN": "pomme",
+      "CarN": "voiture",
+      "FriendN": "ami",
+      "TeacherN": "professeur",
+      "SingV": "chanter",
+      "SwimV": "nager",
+      "ComeV": "venir",
+      "EatV2": "manger",
+      "BuyV2": "acheter",
+      "HelpV2": "aider",
+      "BigA": "grand",
+      "SmallA": "petit",
+      "OldA": "vieux",
+      "RedA": "rouge",
+      "HappyA": "heureux",
+      "GoodA": "bon",
+      "HereAdv": "ici",
+      "TodayAdv": "aujourd'hui",
+      "OftenAdv": "souvent",
+      "VeryAdA": "très",
+      "EveryDet": "chaque",
+      "SomeDet": "quelque",
+      "AndConj": "et",
+      "OrConj": "ou"
+    },
+    "smoke": [
+      {
+        "term": "MkS Present Positive (PredVP (UsePron IPron) (ComplV2 SeeV2 (DetCN Definite (UseN WomanN))))",
+        "text": "je vois la femme"
+      },
+      {
+        "term": "MkS PresentPerfect Negative (PredVP (UsePron ShePron) (UseV ComeV))",
+        "text": "elle n'est pas venue"
+      }
+    ],
+    "expletive": "il|y",
+    "participleAgreement": "(VPart Masc Sg)"
   }
 ]

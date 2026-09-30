@@ -97,6 +97,6 @@
   .row.head { cursor: default; color: #8a8175; font: .62rem ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
   .tense { padding: .2rem .3rem; border: 0; border-radius: .3rem; background: transparent; color: #5a3e8c; font: 650 .74rem ui-monospace, monospace; text-align: left; cursor: pointer; }
   .tense:hover { background: #ebe6f6; }
-  .cell { display: flex; flex-wrap: wrap; gap: .25rem; align-items: end; }
+  .cell { --word-gap: .25rem; display: flex; flex-wrap: wrap; gap: var(--word-gap); align-items: end; }
   .error { color: #a22f2f; font-size: .8rem; }
 </style>

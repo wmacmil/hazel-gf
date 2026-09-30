@@ -12,8 +12,8 @@ const parse = (language: string, text: string) => parseSentence(grammar, languag
 
 describe('parsing: text in an algebra back to trees of the operad', () => {
   it('round-trips: every sampled sentence parses back to the tree it came from', () => {
-    // German parses cost ~350 ms each (GF's prediction over its large S), so sample it more sparsely.
-    const stride: Record<string, number> = { HazelGFEng: 61, HazelGFSwe: 61, HazelGFGer: 1201 }
+    // German parses cost ~350 ms each (GF's prediction over its large S), so sample it more sparsely; French ~100 ms.
+    const stride: Record<string, number> = { HazelGFEng: 61, HazelGFSwe: 61, HazelGFFre: 67, HazelGFGer: 1201 }
     for (const language of LANGUAGE_IDS) {
       let checked = 0
       for (const tense of oracleIndex.shards) {

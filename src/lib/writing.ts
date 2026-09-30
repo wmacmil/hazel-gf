@@ -20,12 +20,14 @@ const normalize = (text: string) => text.trim().toLocaleLowerCase()
 
 /**
  * Tense/aspect read off RGL paradigm cell names. The names differ per language
- * (VImpfInd, VPast, VPret), so each pattern covers all three RGLs in use.
+ * (VImpfInd, VPast, VPret, VImperf Indic), so each pattern covers every RGL in use.
  */
 const CELL_FEATURES: [RegExp, string][] = [
   [/VPresInd|\bVPres\b|VPres Act/, 'PRES'],
-  [/VImpfInd|\bVPast\b|VPret Act/, 'PAST'],
-  [/VPPart|VPastPart|VSupin Act/, 'PTCP'],
+  [/VImpfInd|\bVPast\b|VPret Act|VImperf Indic/, 'PAST'],
+  [/\bVFut\b/, 'FUT'],
+  [/\bVCondit\b/, 'COND'],
+  [/VPPart|VPastPart|VSupin Act|\bVPart\b/, 'PTCP'],
 ]
 const featuresOfCell = (cell: string) => CELL_FEATURES.filter(([pattern]) => pattern.test(cell)).map(([, feature]) => feature)
 

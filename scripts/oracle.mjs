@@ -52,6 +52,14 @@ const strata = {
     sentence('Present', 'Positive', pred(`DetCN ${d} (AdjCN (AdAP VeryAdA (PositA ${a})) (UseN ${n}))`, 'UseV SleepV'))))),
   predicative: temps.flatMap(t => pols.flatMap(p => [...prons.map(pron => `UsePron ${pron}`), ...nouns.map(n => `DetCN Definite (UseN ${n})`)]
     .flatMap(subject => adjectives.map(a => sentence(t, p, pred(subject, `UseAP (PositA ${a})`)))))),
+  // Comparatives: predicative with and without *than*, and attributive (der größere Hund, le plus grand chien).
+  comparatives: [
+    ...['Present', 'Past'].flatMap(t => pols.flatMap(p => subjects.flatMap(subject => adjectives.flatMap(a =>
+      [`UseAP (UseComparA ${a})`, `UseAP (ComparA ${a} (DetCN Definite (UseN DogN)))`, `UseAP (ComparA ${a} (UsePron ShePron))`]
+        .map(vp => sentence(t, p, pred(subject, vp))))))),
+    ...dets.flatMap(d => adjectives.flatMap(a => nouns.map(n => sentence('Present', 'Positive', pred(`DetCN ${d} (AdjCN (UseComparA ${a}) (UseN ${n}))`, 'UseV SleepV'))))),
+    ...adjectives.flatMap(a => nouns.map(n => sentence('Present', 'Positive', pred('UsePron IPron', `ComplV2 SeeV2 (DetCN Definite (AdjCN (UseComparA ${a}) (UseN ${n})))`)))),
+  ],
   // Existentials: there is / es gibt / det finns.
   existential: [...temps.flatMap(t => pols.flatMap(p => nps.map(np => sentence(t, p, `ExistNP ${arg(np)}`)))),
     ...pols.flatMap(p => adjectives.flatMap(a => nouns.map(n => sentence('Present', p, `ExistNP (${adjCN('Indefinite', a, n)})`))))],
@@ -93,11 +101,41 @@ function paradigms() {
     for (const line of output.split('\n')) {
       const marker = line.match(/^@@ (\w+)$/)
       if (marker) { current = cells[marker[1]] = {}; continue }
-      const cell = line.match(/^s (.*?) : (.*)$/)
+      // The `s` field's cells by name; French keeps irregular comparatives (meilleur) in a `compar` field.
+      const cell = line.match(/^s (.*?) : (.*)$/) ?? line.match(/^(compar .*?) : (.*)$/)
       if (current && cell && cell[2]) current[cell[1]] = cell[2]
     }
   }
+  addVariants(tables, lexical)
   return { tables, government: government(tables) }
+}
+
+/**
+ * Forms `l -table` does not show: GF `pre { … }` variants chosen by the next
+ * word (French vieux/vieil, le/l', je/j'). They are in the compiled grammar as
+ * SymKP alternatives; each becomes a cell `pre N` of the leaf's table, so the
+ * editor finds and cites them like any other form.
+ */
+function addVariants(tables, lexical) {
+  const compiled = JSON.parse(readFileSync(resolve(appDir, 'public/HazelGF.json'), 'utf8'))
+  for (const language of languages) {
+    const concrete = compiled.concretes[language]
+    for (const name of lexical) {
+      const fun = concrete.functions.find(item => item.name === name)
+      if (!fun || !tables[language][name]) continue
+      const variants = new Set()
+      const walk = value => {
+        if (Array.isArray(value)) { value.forEach(walk); return }
+        if (!value || typeof value !== 'object') return
+        if (value.type === 'Alt') value.args[0].forEach(symbol => symbol.type === 'SymKS' && symbol.args.forEach(token => token && token !== '&+' && variants.add(token)))
+        Object.values(value).forEach(walk)
+      }
+      fun.lins.forEach(index => walk(concrete.sequences[index]))
+      const known = new Set(Object.values(tables[language][name]))
+      let serial = 0
+      for (const form of variants) if (!known.has(form)) tables[language][name][`pre ${serial++}`] = form
+    }
+  }
 }
 
 /**
@@ -150,7 +188,9 @@ try {
     const response = await fetch(`${base}?${new URLSearchParams({ command: 'linearize', tree })}`)
     if (!response.ok) throw new Error(`linearize failed (${response.status}) for ${tree}`)
     const raw = await response.json()
-    table[tree] = raw.filter(item => languages.has(item.to))
+    // In registry order (the server lists concretes alphabetically).
+    const order = [...languages]
+    table[tree] = raw.filter(item => languages.has(item.to)).sort((a, b) => order.indexOf(a.to) - order.indexOf(b.to))
       .map(({ to, text, brackets }) => ({ to, text, brackets }))
     if (table[tree].length !== languages.size) throw new Error(`missing languages for ${tree}`)
   }

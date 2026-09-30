@@ -32,7 +32,13 @@ const tokenize = (text: string) => text.replace(/[.,!?;:]+/g, ' ').split(/\s+/).
  * sentence-initial capital dropped (The → the); with words the grammar only
  * knows capitalized repaired (German mann → Mann).
  */
-export function spellings(tokens: string[], terminals: Set<string>): string[][] {
+export function spellings(input: string[], terminals: Set<string>): string[][] {
+  // Elision the grammar binds (French l'homme, n'est, j'achète) is typed as one word; GF parses it as two.
+  // A word the grammar knows whole (aujourd'hui) stays whole.
+  const tokens = input.flatMap(token => {
+    const match = /^(.+?['’])(.+)$/.exec(token)
+    return match && !terminals.has(token) && terminals.has(match[1].replace('’', "'")) ? [match[1].replace('’', "'"), match[2]] : [token]
+  })
   const lowerFirst = tokens.map((token, index) =>
     index === 0 && !terminals.has(token) && terminals.has(token.toLowerCase()) ? token.toLowerCase() : token)
   const capitalized = (list: string[]) => list.map(token => {

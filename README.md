@@ -5,7 +5,7 @@ reuses Hazelnut's semantic ideas—typed holes, a focused tree, and
 type-preserving edit actions—without embedding or compiling the Hazel OCaml
 application.
 
-One shared abstract tree is linearized into English, German, and Swedish by
+One shared abstract tree is linearized into English, German, Swedish, and French by
 the locally installed GF 3.11 runtime. Category hues are shared by the tree,
 typed holes, and surface spans. Focus and hover identify exact node
 occurrences; morphology annotations expose fused and empty exponents.
@@ -62,6 +62,9 @@ Four settings, each in the URL and remembered:
 - `colors=channels|pos`: channels (hue = abstract vs concrete) or parts of
   speech (hue = POS, shade = abstract vs concrete; hues editable in the
   palette popover). See docs/design.md.
+- `boxes=shown|auto|folded`: the phrase-box tree under each sentence. Folded
+  leaves just the sentences, side by side; auto folds once the tree has no
+  holes left (unfolds while you are still filling it). `z` flips it.
 - `lines=auto|columns|rows`: languages side by side or one per row. `auto`
   measures the pane and uses columns only when all sentences fit together;
   every sentence then scales (0.55×–2×) to fill its space without clipping.
@@ -147,12 +150,17 @@ decks, and practice (designed, not built yet).
 Nouns (15), verbs (9 intransitive, 6 transitive — German *helfen* governs
 the dative), adjectives (6, attributive `AdjCN`, predicative `UseAP`, with
 `very`), adverbs (*here, today, often*), quantifiers (*every, some*),
-existentials (`ExistNP`: *there is / es gibt / det finns*), and coordination of
-noun phrases and sentences (*and, or*). Every lexical leaf has explicit
+comparatives (`ComparA`: *bigger than the dog / größer als der Hund / plus grand
+que le chien*; `UseComparA`: *bigger*, *der größere Hund*, *le plus grand
+chien*), existentials (`ExistNP`: *there is / es gibt / det finns / il y a*),
+and coordination of noun phrases and sentences (*and, or*). A comparative
+carries `CMP` (the degree axis): on the adjective where the language inflects
+it (*big·ger*, *größer·e*, *meilleur*), on the degree word where it is analytic
+(*plus* grand). Every lexical leaf has explicit
 paradigm arguments. A coordinated sentence is annotated clause by clause (own
 tense, polarity, subject); subject agreement comes from the subject's
 structure (a coordinated subject is plural). The oracle is a stratified sample
-(22k sentences) covering every operation; `constructions.<code>.txt` is the
+(23k sentences) covering every operation; `constructions.<code>.txt` is the
 reviewed segmentation of the new constructions.
 
 ## Prepositional phrases

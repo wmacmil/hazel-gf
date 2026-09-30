@@ -18,6 +18,8 @@ abstract HazelGF = {
     AdvCN     : CN -> Adv -> CN ;     -- woman with the dog (recursive)
     PositA    : A -> AP ;             -- big
     AdAP      : AdA -> AP -> AP ;     -- very big
+    ComparA   : A -> NP -> AP ;       -- bigger than the dog
+    UseComparA : A -> AP ;            -- bigger
     AdjCN     : AP -> CN -> CN ;      -- big dog
     UseAP     : AP -> VP ;            -- is big
     ExistNP   : NP -> Cl ;            -- there is a dog / es gibt einen Hund

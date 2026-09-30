@@ -43,19 +43,21 @@ describe('precomputed static linearizations', () => {
       "the[DEF] man didn't[NEG·PAST] sleep",
       'der[DEF] Mann schlief[PAST]·∅[3SG] nicht[NEG]',
       'man·nen[DEF] sov·∅[PAST]·∅[3SG] inte[NEG]',
+      "l'[DEF] homme ne[NEG] dorm·ai[PAST]·t[3SG] pas[NEG]",
     ])
     expect(labelled('FuturePerfect')).toEqual([
       "the[DEF] man won't[NEG·FUT] have[PERF] slept[PTCP]",
       'der[DEF] Mann wird[FUT·3SG] nicht[NEG] ge[PTCP]·schlaf·en[PTCP] haben[PERF]',
       'man·nen[DEF] ska[FUT]·∅[3SG] inte[NEG] ha[PERF] sov·it[PTCP]',
+      "l'[DEF] homme n'[NEG] aura[FUT·PERF·3SG] pas[NEG] dorm·i[PTCP]",
     ])
   })
 
   it('serves the worked examples through the same provenance pipeline', () => {
     const agreement = agreementExample()
     const projections = normalizeLinearizations(table[toGfTerm(agreement.root)], agreement.root, 1)
-    expect(projections.map(item => item.text)).toEqual(["the man doesn't sleep", 'der Mann schläft nicht', 'mannen sover inte'])
-    expect(table[toGfTerm(exampleDocument().root)].map(item => item.text)).toEqual(['I see the woman', 'ich sehe die Frau', 'jag ser kvinnan'])
+    expect(projections.map(item => item.text)).toEqual(["the man doesn't sleep", 'der Mann schläft nicht', 'mannen sover inte', "l'homme ne dort pas"])
+    expect(table[toGfTerm(exampleDocument().root)].map(item => item.text)).toEqual(['I see the woman', 'ich sehe die Frau', 'jag ser kvinnan', 'je vois la femme'])
   })
 })
 

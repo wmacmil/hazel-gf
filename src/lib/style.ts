@@ -11,6 +11,7 @@ export const FEATURE_COLORS: Record<FeatureAxis, { ink: string; wash: string }> 
   tense: { ink: '#b65616', wash: '#fce1cf' }, // 24°
   aspect: { ink: '#a1700d', wash: '#fcefcf' }, // 42°
   definiteness: { ink: '#8e850b', wash: '#fcf9cf' }, // 56°
+  degree: { ink: '#6f8a0b', wash: '#f1fccf' }, // 73°
 }
 
 export function hueOf(hex: string): number {

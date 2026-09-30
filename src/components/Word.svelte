@@ -20,7 +20,7 @@
   const isPinned = (piece: Morpheme) => piece.features.some(feature => pinned.includes(feature))
 </script>
 
-<span class="word" class:active class:compact class:hole={segment.role === 'hole'}>
+<span class="word" class:active class:compact class:bound={segment.bound} class:hole={segment.role === 'hole'}>
   {#each pieces as piece, index (index)}
     <button
       type="button"
@@ -47,6 +47,8 @@
     border: 1px solid #d8cfbf; border-radius: .4rem; background: #fffdf8;
   }
   .word.active { outline: 2px solid #1d1b18; outline-offset: 2px; }
+  /* Bound to the previous word (GF BIND: l'·homme): flush against it, joined by a dotted seam. */
+  .word.bound { margin-left: calc(-1 * var(--word-gap, .25rem) - 1px); border-left: 1px dotted #b9ae9c; border-top-left-radius: 0; border-bottom-left-radius: 0; }
   .word.hole { border-style: dashed; }
   .piece {
     display: inline-flex; flex-direction: column; align-items: center; justify-content: start; gap: .12rem;

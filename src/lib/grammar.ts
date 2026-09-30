@@ -16,6 +16,8 @@ export const CONSTRUCTORS: Constructor[] = [
   c('AdvCN', 'noun + adverbial', ['CN', 'Adv'], 'CN'),
   c('PositA', 'adjective phrase', ['A'], 'AP'),
   c('AdAP', 'degree + adjective', ['AdA', 'AP'], 'AP'),
+  c('ComparA', 'comparative with than', ['A', 'NP'], 'AP'),
+  c('UseComparA', 'comparative', ['A'], 'AP'),
   c('AdjCN', 'adjective + noun', ['AP', 'CN'], 'CN'),
   c('UseAP', 'be + adjective', ['AP'], 'VP'),
   c('ExistNP', 'there is …', ['NP'], 'Cl'),

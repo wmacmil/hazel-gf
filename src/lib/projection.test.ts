@@ -1,3 +1,4 @@
+import { LANGUAGE_IDS } from './languages'
 import { describe, expect, it } from 'vitest'
 import { agreementExample, exampleDocument } from './examples'
 import { findNode, preorder } from './editor'
@@ -17,7 +18,7 @@ describe('linearization provenance', () => {
     if (object.kind !== 'apply') throw new Error('fixture')
     object.children[1] = { kind: 'hole', id: 'missing-cn', expected: 'CN' }
     const projections = partialProjections(document.root, 7)
-    expect(projections).toHaveLength(3)
+    expect(projections).toHaveLength(LANGUAGE_IDS.length)
     expect(projections.every(item => item.segments.some(segment => segment.text === '⟦CN⟧' && segment.role === 'hole'))).toBe(true)
   })
 

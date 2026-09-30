@@ -34,6 +34,7 @@ export function linearizeInBrowser(grammar: BrowserGrammar, term: string, root: 
       const fun = node?.kind === 'apply' ? node.constructor : '?'
       return { fun, cat: node?.kind === 'apply' ? node.output : '?', fid: 0, index: 0, node: node?.id, children: [{ token: s }] }
     })
-    return { to: language, text: concrete.linearize(tree), brackets }
+    // gf-typescript leaves GF's BIND token (&+) in its text; the server joins it (l' &+ homme → l'homme).
+    return { to: language, text: String(concrete.linearize(tree)).replace(/\s*&\+\s*/g, '').replace(/\s+/g, ' ').trim(), brackets }
   })
 }
