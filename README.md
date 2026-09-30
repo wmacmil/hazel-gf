@@ -78,6 +78,17 @@ the words GF would accept next (click one to continue). Capitalization the
 grammar requires is repaired (*der mann* → *der Mann*). `parsing.test.ts`
 round-trips sampled sentences in every language back to their own trees.
 
+## Finding expressions by type
+
+In edit mode (or press `/`), the focused hole gets a search box. A query is a
+name or label (*PredVP*, *adjective*), a word in any language (*Frau*,
+*schlief*), or a signature — `NP -> VP` (takes an NP, gives a VP), `-> AP`
+(anything giving an AP), `AP -> _`. Every result is a whole expression of the
+hole's type: the shortest chain from the hole down to the match, with the
+remaining arguments as holes (*red* in an NP hole → `DetCN ⟦Det⟧ (AdjCN
+(PositA RedA) ⟦CN⟧)`). `src/lib/search.ts`; `search.test.ts` checks every
+result has the hole's sort.
+
 ## Writing
 
 Focus any hole and type a word in English, German, or Swedish. Candidates are

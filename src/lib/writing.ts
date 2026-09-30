@@ -54,7 +54,13 @@ export function formIndex(paradigms: Paradigms, language: LanguageId): Map<strin
  * step entering one argument (the others become holes): N → NP is
  * DetCN(⟦Det⟧, UseN(·)). Recursive wrappers (VP → VP) are never needed.
  */
-function chainTo(target: CategoryId, category: CategoryId): { constructor: ConstructorId; input: number }[] | undefined {
+export type Chain = { constructor: ConstructorId; input: number }[]
+
+export function chainTo(target: CategoryId, category: CategoryId): Chain | undefined {
+  return chainToImpl(target, category)
+}
+
+function chainToImpl(target: CategoryId, category: CategoryId): { constructor: ConstructorId; input: number }[] | undefined {
   if (target === category) return []
   const queue: { sort: CategoryId; chain: { constructor: ConstructorId; input: number }[] }[] = [{ sort: target, chain: [] }]
   const seen = new Set<CategoryId>([target])
@@ -73,9 +79,10 @@ function chainTo(target: CategoryId, category: CategoryId): { constructor: Const
   }
 }
 
-function build(chain: { constructor: ConstructorId; input: number }[], leaf: ConstructorId): ApplyNode {
-  const leafDeclaration = constructorById.get(leaf)!
-  let node: ApplyNode = { kind: 'apply', id: freshId(), constructor: leaf, output: leafDeclaration.output, children: [] }
+/** The expression `chain` ∘ `bottom`: the bottom operation gets holes for its own arguments, each step one more. */
+export function build(chain: Chain, bottom: ConstructorId): ApplyNode {
+  const declaration0 = constructorById.get(bottom)!
+  let node: ApplyNode = { kind: 'apply', id: freshId(), constructor: bottom, output: declaration0.output, children: declaration0.inputs.map(hole) }
   for (const { constructor, input } of [...chain].reverse()) {
     const declaration = constructorById.get(constructor)!
     const children: Node[] = declaration.inputs.map(hole)

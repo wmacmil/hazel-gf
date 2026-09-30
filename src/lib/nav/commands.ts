@@ -28,6 +28,7 @@ export const COMMANDS = {
   'language.previous': 'Previous language row',
   'language.next': 'Next language row',
   'camera.fit': 'Fit the whole tree in view',
+  'search.open': 'Find an expression for the focused hole (edit mode)',
 } as const
 export type CommandId = keyof typeof COMMANDS
 
@@ -51,6 +52,7 @@ export const PROFILES: Record<string, KeyProfile> = {
       'global.s': 'word.previous', 'global.d': 'word.next',
       'global.[': 'language.previous', 'global.]': 'language.next',
       'global.=': 'camera.fit',
+      'global./': 'search.open',
     },
   },
 }

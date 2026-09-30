@@ -6,9 +6,9 @@
   import OperadFlow from './components/OperadFlow.svelte'
   import SentenceBox from './components/SentenceBox.svelte'
   import { createRuntime, loadParadigms } from './lib/gf'
-  import WriteBox from './components/WriteBox.svelte'
+  import TypeSearch from './components/TypeSearch.svelte'
+  import type { SearchResult } from './lib/search'
   import type { Paradigms } from './lib/morphology'
-  import type { Candidate } from './lib/writing'
   import { producers, profile, wrappers } from './lib/grammar'
   import {
     clearFocused, fillFocused, findNode, isComplete, newDocument, outputOf,
@@ -79,13 +79,15 @@
 
   let paradigms = $state<Paradigms>()
 
-  /** Write a candidate into the focused hole; an inflected form also pins what it commits to. */
-  function write(candidate: Candidate) {
+  let searchInput = $state<HTMLInputElement>()
+
+  /** Insert a found expression into the focused hole; a word match also pins what its form commits to. */
+  function insertFound(result: SearchResult) {
     if (focused.kind !== 'hole') return
     try {
-      commit(insertAt(document, focused.id, candidate.subtree))
-      if (candidate.pins.length) pinned = [...new Set([...pinned, ...pinnable(candidate.pins)])]
-    } catch (cause) { error = cause instanceof Error ? cause.message : 'Write failed' }
+      commit(insertAt(document, focused.id, result.expression))
+      if (result.word?.pins.length) pinned = [...new Set([...pinned, ...pinnable(result.word.pins)])]
+    } catch (cause) { error = cause instanceof Error ? cause.message : 'Insert failed' }
   }
 
   function move(subtree: NodeId, parent: NodeId, port: number) {
@@ -254,6 +256,10 @@
         return
       }
       case 'camera.fit': fitSeq += 1; return
+      case 'search.open':
+        if (settings.mode !== 'edit') setSetting('mode', 'edit')
+        requestAnimationFrame(() => searchInput?.focus())
+        return
     }
   }
 
@@ -345,7 +351,7 @@
     </div>
 
     {#if focused.kind === 'hole'}
-      <WriteBox expected={focused.expected} {paradigms} onWrite={write} />
+      <TypeSearch target={focused.expected} {paradigms} onInsert={insertFound} bind:input={searchInput} />
       <p class="instruction">…or choose an operation whose output is <b>{focused.expected}</b>.</p>
       {#if choices.length < allChoices.length}
         <p class="pin-note">{allChoices.length - choices.length} hidden by pinned {pinned.join(' · ')}</p>

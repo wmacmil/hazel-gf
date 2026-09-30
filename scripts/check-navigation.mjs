@@ -100,6 +100,26 @@ try {
     expect(`${region}: j then l l → across cousins, stopping at the level's end`, await focusedInFlow(), 'UseV')
   }
 
+  // 3c. Type-directed search builds a sentence: / opens it on the focused hole.
+  await page.goto(`${BASE}?mode=edit&operad=flow&layout=right&lines=auto`)
+  await page.waitForSelector('.svelte-flow__node', { state: 'attached' }); await page.waitForTimeout(800)
+  await page.locator('.worked select').selectOption('blank sentence'); await settle()
+  const search = page.getByLabel('Find an expression')
+  const find = async (query, pick = 0) => {
+    await search.fill(query); await page.waitForTimeout(250)
+    const top = await page.locator('.type-search .result').nth(pick).innerText()
+    await page.locator('.type-search .result').nth(pick).click(); await settle()
+    return top.replace(/\s+/g, ' ')
+  }
+  truthy('search: "exist" in an S hole offers MkS › ExistNP', (await find('exist')).includes('MkS › ExistNP'))
+  await page.locator('aside .choice', { has: page.locator('code', { hasText: /^Present$/ }) }).click(); await settle()
+  await page.locator('aside .choice', { has: page.locator('code', { hasText: /^Positive$/ }) }).click(); await settle()
+  truthy('search: "red" in an NP hole reaches DetCN › AdjCN › PositA › RedA', (await find('red')).includes('DetCN › AdjCN › PositA › RedA'))
+  truthy('search: signature -> Det offers determiners', (await find('-> Det')).includes('Det'))
+  truthy('search: a word in any language (Vogel)', (await find('Vogel')).includes('Vogel'))
+  await page.waitForTimeout(600)
+  expect('the searched sentence is complete and linearized', (await page.locator('.workspace-bar code').innerText()).startsWith('MkS Present Positive (ExistNP (DetCN'), true)
+
   // 4. Typing in an input never navigates.
   await page.getByLabel('Sentence to parse').click()
   const before = await focusedInFlow()
