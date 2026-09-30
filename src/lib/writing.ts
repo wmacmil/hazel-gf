@@ -81,8 +81,13 @@ function chainToImpl(target: CategoryId, category: CategoryId): { constructor: C
 
 /** The expression `chain` ∘ `bottom`: the bottom operation gets holes for its own arguments, each step one more. */
 export function build(chain: Chain, bottom: ConstructorId): ApplyNode {
-  const declaration0 = constructorById.get(bottom)!
-  let node: ApplyNode = { kind: 'apply', id: freshId(), constructor: bottom, output: declaration0.output, children: declaration0.inputs.map(hole) }
+  const declaration = constructorById.get(bottom)!
+  return wrapIn(chain, { kind: 'apply', id: freshId(), constructor: bottom, output: declaration.output, children: declaration.inputs.map(hole) }) as ApplyNode
+}
+
+/** The expression `chain` ∘ `subtree`: each step wraps it, its other arguments left as holes. */
+export function wrapIn(chain: Chain, subtree: Node): Node {
+  let node = subtree
   for (const { constructor, input } of [...chain].reverse()) {
     const declaration = constructorById.get(constructor)!
     const children: Node[] = declaration.inputs.map(hole)

@@ -89,6 +89,32 @@ remaining arguments as holes (*red* in an NP hole → `DetCN ⟦Det⟧ (AdjCN
 (PositA RedA) ⟦CN⟧)`). `src/lib/search.ts`; `search.test.ts` checks every
 result has the hole's sort.
 
+## Grafting from the keyboard
+
+Every edit is "put an expression at the focused node", and the expression can
+come from words (concrete → parse), an operation (abstract, direct), or a
+fragment on the bench. Move with hjkl, then:
+
+| key | verb | |
+|---|---|---|
+| `i` | insert | write here: words in any language, parsed at the focused sort; or an operation, a word, a signature (`-> AP`). Empty input lists every operation returning the sort. |
+| `g` | graft | bring a bench fragment here (bench first, then everything else that fits) |
+| `e` | extend | build around the focused node: it fills a hole of its sort in the new expression (*the dog* + `_ and the woman`, or `AdvVP`) |
+| `x` | cut | move the focused subtree to the bench, leaving a typed hole |
+| `a` | new | start a new bench fragment from words or an operation |
+
+In the prompt: ↑↓ or Ctrl-j/k choose, Enter applies, Tab switches verb, Esc
+closes. `_` is a typed hole the grammar places (*the _ dog* → an AP hole).
+A phrase parses at the hole's sort *or any sort that lifts into it*: *small
+dog* is a CN, so in an NP hole it becomes `DetCN ⟦Det⟧ (…)` and focus moves to
+the ⟦Det⟧ obligation. VPs and clauses, whose surface GF splits over several
+fields, are parsed inside a clause frame and taken back out (*sleep in the
+house*, *schläft*). Replaced subtrees go to the bench, never lost; undo covers
+the sentence and the bench together. In the builder the same keys act on the
+focused bench fragment. `src/lib/graft.ts`, `parsing.ts: parsePhrase`;
+`graft.test.ts`, and `check-navigation.mjs` builds, extends, cuts, and grafts
+a sentence with the keyboard only.
+
 ## Tree builder
 
 `operad=builder` is an optional workbench after Operad14: build trees

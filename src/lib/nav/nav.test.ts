@@ -105,7 +105,8 @@ describe('key profile', () => {
     expect(resolveKey(profile, 'tree', 'j')).toBe('nav.south')
     expect(resolveKey(profile, 'sentence', 'd')).toBe('word.next')
     expect(resolveKey(profile, 'tree', keySpecOf({ key: '˙', code: 'KeyH', altKey: true }))).toBe('nav.parent')
-    expect(resolveKey(profile, 'sentence', 'x')).toBeNull()
+    expect(resolveKey(profile, 'sentence', 'q')).toBeNull()
+    expect(['i', 'g', 'e', 'x', 'a'].map(key => resolveKey(profile, 'tree', key))).toEqual(['edit.insert', 'edit.graft', 'edit.extend', 'edit.cut', 'edit.new'])
   })
 })
 

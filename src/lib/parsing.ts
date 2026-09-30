@@ -1,6 +1,8 @@
 import type { BrowserGrammar } from './browser-gf'
 import { constructorById } from './grammar'
-import { freshId, toGfTerm } from './editor'
+import { freshId, hole, toGfTerm, toPartialTerm } from './editor'
+import { CATEGORIES, type CategoryId } from './model'
+import { chainTo, wrapIn } from './writing'
 import type { Node } from './model'
 
 /**
@@ -104,4 +106,120 @@ export function distinguishing(terms: string[]): Record<string, string[]> {
     const unique = [...mine.keys()].filter(name => counts.some((other, j) => j !== index && (other.get(name) ?? 0) < mine.get(name)!))
     return [term, unique.sort()]
   }))
+}
+
+/** A GF tree as an editor tree where the grammar's Hole* placeholders become typed holes. */
+function toPartialNode(tree: GfTree): Node | undefined {
+  if (tree.name.startsWith('Hole')) {
+    const sort = tree.name.slice(4)
+    return (CATEGORIES as readonly string[]).includes(sort) ? hole(sort as CategoryId) : undefined
+  }
+  const declaration = constructorById.get(tree.name)
+  if (!declaration || declaration.editorOnly) return undefined
+  const children: Node[] = []
+  for (const arg of tree.args) {
+    const child = toPartialNode(arg)
+    if (!child) return undefined
+    children.push(child)
+  }
+  return { kind: 'apply', id: freshId(), constructor: declaration.id, output: declaration.output, children }
+}
+
+const holesIn = (node: Node): number => node.kind === 'hole' ? 1 : node.children.reduce((sum, child) => sum + holesIn(child), 0)
+
+/** Typed words: `_` (or `?`) is a hole to be resolved by the grammar. */
+const HOLE_MARKERS = new Set(['_', '?'])
+
+type Frame = { category: string; subject?: string; extract: (tree: GfTree) => GfTree | undefined }
+const predicateOf = (tree: GfTree) => tree.name === 'PredVP' ? tree.args[1] : undefined
+/**
+ * Sorts GF cannot parse on their own, because their surface is split over
+ * several fields (a VP's verb and complement; a Cl's tensed forms): parse them
+ * inside a clause or sentence around them and take them back out. A VP is
+ * tried after a third-person, a first-person, and a plural subject, so
+ * *sleeps*, *sleep* and *schlafe* all read as a VP.
+ */
+const FRAMES: Partial<Record<CategoryId, Frame[]>> = {
+  VP: ['HoleNP', 'UsePron IPron', 'UsePron TheyPron', 'UsePron YouPron'].map(subject => ({ category: 'Cl', subject, extract: predicateOf })),
+  Cl: [{ category: 'S', extract: tree => tree.name === 'MkS' ? tree.args[2] : undefined }],
+}
+
+/** A parsed phrase: a partial term (holes as `?Sort`), the sort it parsed at, and the chain lifting it to the target. */
+export type PhraseReading = { term: string; category: CategoryId; language: string; via: string[] }
+
+/**
+ * Parse a phrase — not only a sentence — for a hole of sort `target`: at the
+ * target itself and at every sort that chains into it (*small dog* is a CN,
+ * lifted into an NP hole as `DetCN ?Det (AdjCN …)`), or at every sort when
+ * there is no target. A `_` stands for a hole: GF's own completion says which
+ * typed placeholder fits there (*the _ dog* → an AP hole), so the result is a
+ * partial tree with its obligations. Unknown words fail fast.
+ */
+export function parsePhrase(grammar: BrowserGrammar, language: string, text: string, terminals: Set<string>, target: CategoryId | undefined, limit = 12): PhraseReading[] {
+  const concrete = grammar.concretes[language]
+  if (!concrete) return []
+  const tokens = text.replace(/[.,!;:]+/g, ' ').split(/\s+/).filter(Boolean)
+  if (!tokens.length || tokens.every(token => HOLE_MARKERS.has(token))) return []
+  const words = (read: string[]) => read.filter(token => !HOLE_MARKERS.has(token))
+  const readings = spellings(tokens, terminals).filter(read => words(read).every(token => terminals.has(token)))
+  if (!readings.length) return []
+  const sorts = (CATEGORIES as readonly CategoryId[])
+    .map(category => ({ category, chain: target ? chainTo(target, category) : [] }))
+    .filter((entry): entry is { category: CategoryId; chain: NonNullable<ReturnType<typeof chainTo>> } => Boolean(entry.chain))
+    .sort((a, b) => a.chain.length - b.chain.length)
+  const found = new Map<string, PhraseReading & { size: number }>()
+  // Shortest lift first, and stop at the first length that parses: a reading at
+  // the target itself beats the same words lifted from below (GF's German
+  // prediction is slow, so this also bounds the work).
+  const lengths = [...new Set(sorts.map(entry => entry.chain.length))]
+  for (const length of lengths) {
+    if (found.size) break
+    for (const read of readings) for (const { category, chain } of sorts.filter(entry => entry.chain.length === length)) {
+      const markers = read.filter(token => HOLE_MARKERS.has(token)).length
+      const frames = FRAMES[category] ?? [{ category, extract: (tree: GfTree) => tree }]
+      const before = found.size
+      for (const frame of frames) if (found.size === before) for (const filled of resolveHoles(concrete, [...subjectTokens(grammar, language, frame.subject), ...read], frame.category)) {
+        let trees: GfTree[]
+        // Some sorts' extra fields are empty in some languages (a German CN), which
+        // gives GF's extractor a cyclic forest; such a sort just yields nothing.
+        try { trees = (concrete.parseTokens(filled, frame.category) as { trees: GfTree[] }).trees } catch { continue }
+        for (const tree of trees) {
+          const inner = frame.extract(tree)
+          const node = inner && toPartialNode(inner)
+          // Some placeholders reuse real words (the hole Det is "the"): a hole counts only where a `_` was typed.
+          if (!node || holesIn(node) !== markers) continue
+          const lifted = wrapIn(chain, node)
+          const term = toPartialTerm(lifted)
+          if (!found.has(term)) found.set(term, { term, category, language, via: chain.map(step => step.constructor), size: term.split(' ').length })
+        }
+      }
+    }
+  }
+  // Smallest first: the reading with the fewest extra constructors (a CN hole before an N hole under UseN).
+  return [...found.values()].sort((a, b) => a.via.length - b.via.length || a.size - b.size).slice(0, limit).map(({ size: _, ...reading }) => reading)
+}
+
+/** A frame's subject as tokens in `language` (⟦NP⟧, I, ich, jag …). */
+function subjectTokens(grammar: BrowserGrammar, language: string, subject: string | undefined): string[] {
+  if (!subject) return []
+  const tree = grammar.abstract.parseTree(subject)
+  return tree ? String(grammar.concretes[language].linearize(tree)).split(/\s+/).filter(Boolean) : []
+}
+
+/** Every way to replace the `_` markers by a typed hole placeholder GF accepts there (a few at most). */
+function resolveHoles(concrete: BrowserGrammar['concretes'][string], tokens: string[], category: string, budget = 24): string[][] {
+  const at = tokens.findIndex(token => HOLE_MARKERS.has(token))
+  if (at < 0) return [tokens]
+  const prefix = tokens.slice(0, at).join(' ')
+  let suggestions: string[] = []
+  try { suggestions = concrete.complete(`${prefix} `, category).suggestions as string[] } catch { return [] }
+  const placeholders = [...new Set(suggestions.filter(word => word.startsWith('⟦')))]
+  const results: string[][] = []
+  for (const placeholder of placeholders) {
+    for (const rest of resolveHoles(concrete, [...tokens.slice(0, at), placeholder, ...tokens.slice(at + 1)], category, budget - results.length)) {
+      results.push(rest)
+      if (results.length >= budget) return results
+    }
+  }
+  return results
 }

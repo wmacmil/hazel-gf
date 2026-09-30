@@ -4,6 +4,14 @@ import type { ApplyNode, CategoryId, ConstructorId, EditorDocument, Node, NodeId
 let sequence = 0
 export const freshId = () => `n${++sequence}`
 
+/** Move the id counter past every id in restored trees (a saved document or bench), so new nodes never collide with them. */
+export function reserveIds(...roots: Node[]) {
+  for (const root of roots) for (const node of preorder(root)) {
+    const number = Number(/^n(\d+)$/.exec(node.id)?.[1])
+    if (number > sequence) sequence = number
+  }
+}
+
 export function hole(expected: CategoryId): Node {
   return { kind: 'hole', id: freshId(), expected }
 }
@@ -185,6 +193,34 @@ export function fromGfTerm(term: string): Node {
     if (tokens[index] === '(') { index++; const inner = node(); index++; return inner }
     const constructor = constructorById.get(tokens[index++])
     if (!constructor) throw new Error(`Unknown constructor in ${term}`)
+    return { kind: 'apply', id: freshId(), constructor: constructor.id, output: constructor.output, children: constructor.inputs.map(() => node()) }
+  }
+  return node()
+}
+
+/**
+ * A term that may hold holes, written `?Sort` (`DetCN ?Det (UseN DogN)`): how
+ * partial trees cross a worker boundary without carrying node ids, and a
+ * readable key for telling them apart.
+ */
+export function toPartialTerm(node: Node): string {
+  if (node.kind === 'hole') return `?${node.expected}`
+  const args = node.children.map(child => {
+    const term = toPartialTerm(child)
+    return child.kind === 'apply' && child.children.length ? `(${term})` : term
+  })
+  return [node.constructor, ...args].join(' ')
+}
+
+export function fromPartialTerm(term: string): Node {
+  const tokens = term.match(/[()]|[^\s()]+/g) ?? []
+  let index = 0
+  const node = (): Node => {
+    if (tokens[index] === '(') { index++; const inner = node(); index++; return inner }
+    const token = tokens[index++]
+    if (token?.startsWith('?')) return hole(token.slice(1) as CategoryId)
+    const constructor = constructorById.get(token)
+    if (!constructor) throw new Error(`Unknown constructor ${token} in ${term}`)
     return { kind: 'apply', id: freshId(), constructor: constructor.id, output: constructor.output, children: constructor.inputs.map(() => node()) }
   }
   return node()

@@ -122,6 +122,40 @@ try {
   await page.waitForTimeout(600)
   expect('the searched sentence is complete and linearized', (await page.locator('.workspace-bar code').innerText()).startsWith('MkS Present Positive (ExistNP (DetCN'), true)
 
+  // 3e. Grafting without the mouse: i parses words into the focused hole, e extends, x cuts to the bench, g grafts back.
+  await page.goto(`${BASE}?mode=edit&operad=flow&layout=right&lines=auto`)
+  await page.waitForSelector('.svelte-flow__node', { state: 'attached' }); await page.waitForTimeout(800)
+  await page.locator('.worked select').selectOption('blank sentence'); await settle()
+  await page.locator('.svelte-flow__node').first().click(); await settle()
+  const term = () => page.locator('.workspace-bar code').innerText()
+  const prompt = page.getByLabel('Graft expression')
+  const graftWith = async (key, text, source) => {
+    await page.keyboard.press(key); await prompt.waitFor()
+    await prompt.fill(text)
+    if (source) await page.waitForFunction(want => document.querySelector('.graft .results button .source')?.classList.contains(want), source, { timeout: 8000 })
+      .catch(async () => { throw new Error(`graft "${text}" found no ${source}: ${(await page.locator('.graft').innerText()).replace(/\s+/g, ' ').slice(0, 300)}`) })
+    else await page.waitForTimeout(400)
+    await prompt.press('Enter'); await settle()
+  }
+  await graftWith('i', 'the dog sleeps', 'parse')
+  expect('graft: i parses a sentence into the S hole', await term(), 'MkS Present Positive (PredVP (DetCN Definite (UseN DogN)) (UseV SleepV))')
+  for (const key of ['j', 'l', 'l', 'j']) { await page.keyboard.press(key); await settle() }
+  expect('graft: hjkl reaches the subject', await focusedInFlow(), 'DetCN')
+  await graftWith('e', '_ and the woman', 'parse')
+  expect('graft: e extends the subject around a typed _', await term(), 'MkS Present Positive (PredVP (ConjNP AndConj (DetCN Definite (UseN DogN)) (DetCN Definite (UseN WomanN))) (UseV SleepV))')
+  await page.keyboard.press('x'); await settle()
+  expect('graft: x cuts the subject to the bench', await term(), 'incomplete but well-typed')
+  await graftWith('i', 'small dog', 'parse')
+  expect('graft: a CN phrase lifts into the NP hole, focus moves to its Det obligation', await focusedInFlow(), '⟦Det⟧')
+  await graftWith('i', 'every', null)
+  expect('graft: the obligation is filled by an operation', await term(), 'MkS Present Positive (PredVP (DetCN EveryDet (AdjCN (PositA SmallA) (UseN DogN))) (UseV SleepV))')
+  await page.keyboard.press('k'); await settle()
+  expect('graft: k climbs from the filled Det to its NP', await focusedInFlow(), 'DetCN')
+  await graftWith('g', '', 'bench')
+  expect('graft: g grafts the cut fragment back', await term(), 'MkS Present Positive (PredVP (ConjNP AndConj (DetCN Definite (UseN DogN)) (DetCN Definite (UseN WomanN))) (UseV SleepV))')
+  await page.keyboard.press('Meta+z'); await settle()
+  expect('graft: undo restores the sentence and the bench together', await term(), 'MkS Present Positive (PredVP (DetCN EveryDet (AdjCN (PositA SmallA) (UseN DogN))) (UseV SleepV))')
+
   // 3d. The builder: send, cut a wire, re-plug by dragging, refuse a wrong sort, adopt.
   await page.goto(`${BASE}?example=agreement&mode=view&operad=builder&layout=above&lines=auto`)
   await page.waitForSelector('.builder'); await page.waitForTimeout(600)
@@ -183,6 +217,16 @@ try {
   // Adopt the finished sentence.
   await page.locator('.builder .toolbar .adopt').first().click(); await settle()
   truthy('builder: adopting sets the sentence', (await page.locator('.workspace-bar code').innerText()).startsWith('MkS Present Negative (PredVP (DetCN Definite (UseN ManN))'))
+
+  // The same verbs on the bench: a starts a fragment from words, e wraps it, i fills the new hole.
+  await page.locator('.builder .svelte-flow__node').first().click(); await settle()
+  await graftWith('a', 'small dog', 'parse')
+  expect('bench: a parses words into a new fragment', await status(), '2 fragments · 1 open holes')
+  expect('bench: the new fragment is focused', await benchFocus(), 'AdjCN')
+  await graftWith('e', 'AdvCN', null)
+  expect('bench: e wraps the fragment and focuses its new hole', [await status(), await benchFocus()], ['2 fragments · 2 open holes', 'hole'])
+  await graftWith('i', 'in the house', 'parse')
+  expect('bench: i fills the hole by parsing', await status(), '2 fragments · 1 open holes')
 
   // 4. Typing in an input never navigates.
   await page.getByRole('radiogroup', { name: 'operad' }).getByRole('radio', { name: 'flow' }).click(); await settle()

@@ -13,8 +13,8 @@
   import type { Paradigms } from './lib/morphology'
   import { producers, profile, wrappers } from './lib/grammar'
   import {
-    clearFocused, fillFocused, findNode, isComplete, newDocument, outputOf,
-    freshId, fromGfTerm, insertAt, moveSubtree, swapLeaf, toGfTerm, validateDocument, wrapFocused,
+    clearFocused, fillFocused, findNode, reserveIds, isComplete, newDocument, outputOf,
+    fromGfTerm, insertAt, moveSubtree, preorder, swapLeaf, toGfTerm, validateDocument, wrapFocused,
   } from './lib/editor'
   import { agreementExample, exampleDocument, modifierExample, prepositionExample } from './lib/examples'
   import { partialProjections } from './lib/projection'
@@ -22,6 +22,8 @@
   import { columnFit } from './lib/layout'
   import { POS_FAMILIES, hueToHex, palette, resetHues, setFamilyColor, sortColor, type PosFamily } from './lib/palette.svelte'
   import { PROFILES, keySpecOf, resolveKey, type CommandId, type Region } from './lib/nav/commands'
+  import GraftPrompt from './components/GraftPrompt.svelte'
+  import { GRAFT_MODES, cloneFresh, cut, extend, substitute, type GraftCandidate, type GraftMode } from './lib/graft'
   import { resolveNavigation, type Direction, type GraphNavigationConfig, type StructuralMove } from './lib/nav/graph-theory'
   import { flowGeometry, stepWord, structureOf, type WordStop } from './lib/nav/projections'
   import { type ConstructorId, type EditorDocument, type LinearizationProjection, type NodeId } from './lib/model'
@@ -89,16 +91,81 @@
   let bench = $state<Workbench>(emptyBench())
   $effect(() => { localStorage.setItem(BENCH_KEY, JSON.stringify(bench)) })
   function adopt(fragment: import('./lib/model').Node) {
-    commit({ ...document, root: fragment, focus: fragment.id })
-    bench = removeFragment(bench, fragment.id)
+    commit({ ...document, root: fragment, focus: fragment.id }, removeFragment(bench, fragment.id))
   }
   function sendSentence() {
-    const copy = cloneFresh(document.root)
-    bench = addFragment(bench, copy)
+    commitBench(addFragment(bench, cloneFresh(document.root)))
   }
-  /** A fresh-id copy of a tree (fragments must not share node ids with the document). */
-  function cloneFresh(node: import('./lib/model').Node): import('./lib/model').Node {
-    return node.kind === 'hole' ? { ...node, id: freshId() } : { ...node, id: freshId(), children: node.children.map(cloneFresh) }
+
+  /**
+   * Keyboard grafting (lib/graft.ts): i insert, g graft, e extend at the
+   * focused node — in the sentence, or in a bench fragment when the builder's
+   * tree has focus — x cuts the focused subtree to the bench, a starts a new
+   * fragment. A replaced subtree always lands on the bench.
+   */
+  type GraftSite = { kind: 'document'; node: NodeId } | { kind: 'bench'; fragment: NodeId; node: NodeId } | { kind: 'new' }
+  let graft = $state<{ mode: GraftMode; site: GraftSite }>()
+
+  function siteOfFocus(): GraftSite {
+    if (onBench) {
+      const home = benchFocus ? bench.fragments.find(fragment => findNode(fragment, benchFocus!)) : undefined
+      return home && benchFocus ? { kind: 'bench', fragment: home.id, node: benchFocus } : { kind: 'new' }
+    }
+    return { kind: 'document', node: document.focus }
+  }
+  function siteNode(site: GraftSite) {
+    if (site.kind === 'document') return findNode(document.root, site.node)
+    if (site.kind === 'bench') return bench.fragments.find(fragment => fragment.id === site.fragment) && findNode(bench.fragments.find(fragment => fragment.id === site.fragment)!, site.node)
+  }
+  const graftModes = (site: GraftSite): GraftMode[] => site.kind === 'new' ? ['insert', 'graft'] : siteNode(site)?.kind === 'hole' ? ['insert', 'graft'] : GRAFT_MODES
+
+  function openGraft(mode: GraftMode, site: GraftSite = siteOfFocus()) {
+    if (settings.mode !== 'edit') setSetting('mode', 'edit')
+    graft = { mode: graftModes(site).includes(mode) ? mode : 'insert', site }
+  }
+
+  function applyGraft(candidate: GraftCandidate, mode: GraftMode) {
+    if (!graft) return
+    const { site } = graft
+    try {
+      // A bench fragment moves (it leaves the bench); into a new fragment it is copied.
+      let nextBench = candidate.fragment && site.kind !== 'new' ? removeFragment(bench, candidate.fragment) : bench
+      if (site.kind === 'new') {
+        const fragment = candidate.fragment ? cloneFresh(candidate.expression) : candidate.expression
+        commitBench(addFragment(nextBench, fragment))
+        benchFocus = preorder(fragment).find(node => node.kind === 'hole')?.id ?? fragment.id
+      } else if (site.kind === 'document') {
+        const edit = mode === 'extend' ? extend(document.root, site.node, candidate.expression) : substitute(document.root, site.node, candidate.expression)
+        if (edit.displaced) nextBench = addFragment(nextBench, edit.displaced)
+        commit({ ...document, root: edit.root, focus: edit.focus }, nextBench)
+        if (candidate.pins?.length) pinned = [...new Set([...pinned, ...pinnable(candidate.pins)])]
+      } else {
+        const home = nextBench.fragments.find(fragment => fragment.id === site.fragment)
+        if (!home) throw new Error('That fragment is gone')
+        const edit = mode === 'extend' ? extend(home, site.node, candidate.expression) : substitute(home, site.node, candidate.expression)
+        nextBench = { fragments: nextBench.fragments.map(fragment => fragment === home ? edit.root : fragment) }
+        if (edit.displaced) nextBench = addFragment(nextBench, edit.displaced)
+        commitBench(nextBench)
+        benchFocus = edit.focus
+      }
+      graft = undefined
+    } catch (cause) { error = cause instanceof Error ? cause.message : 'Graft failed' }
+  }
+
+  /** x: cut the focused subtree out to the bench, leaving a typed hole. */
+  function cutFocused() {
+    const site = siteOfFocus()
+    if (site.kind === 'document') {
+      const edit = cut(document.root, site.node)
+      if (edit?.displaced) commit({ ...document, root: edit.root, focus: edit.focus }, addFragment(bench, edit.displaced))
+    } else if (site.kind === 'bench') {
+      const home = bench.fragments.find(fragment => fragment.id === site.fragment)!
+      if (home.id === site.node) return
+      const edit = cut(home, site.node)
+      if (!edit?.displaced) return
+      commitBench(addFragment({ fragments: bench.fragments.map(fragment => fragment === home ? edit.root : fragment) }, edit.displaced))
+      benchFocus = edit.focus
+    }
   }
 
   /** Insert a found expression into the focused hole; a word match also pins what its form commits to. */
@@ -116,8 +183,10 @@
   }
   const runtime = createRuntime()
   let document = $state<EditorDocument>(newDocument())
-  let history = $state<EditorDocument[]>([])
-  let future = $state<EditorDocument[]>([])
+  /** Undo covers the document and the bench together: a graft can move a fragment from one to the other. */
+  type Snapshot = { document: EditorDocument; bench: Workbench }
+  let history = $state<Snapshot[]>([])
+  let future = $state<Snapshot[]>([])
   let revision = $state(0)
   let projections = $state<LinearizationProjection[]>([])
   let linked = $state<NodeId[]>([])
@@ -164,13 +233,18 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(document))
   }
 
-  function commit(next: EditorDocument) {
-    history = [...history, clone(document)].slice(-80)
+  const snapshot = (): Snapshot => ({ document: clone(document), bench: $state.snapshot(bench) as Workbench })
+
+  function commit(next: EditorDocument, nextBench: Workbench = bench) {
+    history = [...history, snapshot()].slice(-80)
     future = []
+    const changed = next !== document
     document = next
+    bench = nextBench
     persist()
-    void refresh()
+    if (changed) void refresh()
   }
+  const commitBench = (next: Workbench) => commit(document, next)
 
   async function refresh() {
     const current = ++revision
@@ -192,9 +266,10 @@
   function undo() {
     const previous = history.at(-1)
     if (!previous) return
-    future = [clone(document), ...future]
+    future = [snapshot(), ...future]
     history = history.slice(0, -1)
-    document = previous
+    document = previous.document
+    bench = previous.bench
     persist()
     void refresh()
   }
@@ -202,9 +277,10 @@
   function redo() {
     const next = future[0]
     if (!next) return
-    history = [...history, clone(document)]
+    history = [...history, snapshot()]
     future = future.slice(1)
-    document = next
+    document = next.document
+    bench = next.bench
     persist()
     void refresh()
   }
@@ -287,6 +363,11 @@
         return
       }
       case 'camera.fit': fitSeq += 1; return
+      case 'edit.insert': return openGraft('insert')
+      case 'edit.graft': return openGraft('graft')
+      case 'edit.extend': return openGraft('extend')
+      case 'edit.new': return openGraft('insert', { kind: 'new' })
+      case 'edit.cut': return cutFocused()
       case 'search.open':
         if (settings.mode !== 'edit') setSetting('mode', 'edit')
         requestAnimationFrame(() => searchInput?.focus())
@@ -334,6 +415,7 @@
     try {
       const value: unknown = JSON.parse(await file.text())
       if (!validateDocument(value)) throw new Error('Document schema, grammar fingerprint, or tree typing is invalid')
+      reserveIds(value.root)
       commit(value)
     } catch (cause) {
       error = cause instanceof Error ? cause.message : 'Import failed'
@@ -349,7 +431,7 @@
     } catch { /* keep the defaults */ }
     try {
       const saved = JSON.parse(localStorage.getItem(BENCH_KEY) ?? 'null') as Workbench | null
-      if (saved && Array.isArray(saved.fragments)) bench = saved
+      if (saved && Array.isArray(saved.fragments)) { reserveIds(...saved.fragments); bench = saved }
     } catch { /* start with an empty bench */ }
     const query = new URLSearchParams(location.search)
     for (const key of Object.keys(OPTIONS) as Setting[]) {
@@ -368,6 +450,7 @@
         if (parsed && validateDocument(parsed)) document = parsed
       } catch { /* retain a fresh document */ }
     }
+    reserveIds(document.root)
     void runtime.loadGrammar().then(() => { runtimeState = 'online' }).catch(() => { runtimeState = 'offline' })
     void loadParadigms().then(loaded => { paradigms = loaded }).catch(() => {})
     void refresh()
@@ -375,6 +458,14 @@
 </script>
 
 <svelte:window onkeydown={keydown} />
+
+{#if graft}
+  {@const node = graft.site.kind === 'new' ? undefined : siteNode(graft.site)}
+  <GraftPrompt bind:mode={graft.mode} modes={graftModes(graft.site)} sort={node ? outputOf(node) : undefined}
+    place={graft.site.kind === 'new' ? 'new bench fragment' : graft.site.kind === 'bench' ? 'bench fragment' : 'sentence'}
+    {bench} {paradigms} excluded={graft.site.kind === 'bench' ? graft.site.fragment : undefined}
+    onApply={applyGraft} onClose={() => graft = undefined} />
+{/if}
 
 
 <main class:editing={settings.mode === 'edit'}>
@@ -422,8 +513,8 @@
       <div class="status" class:offline={runtimeState === 'offline'}>
         <span></span>{runtimeState === 'online' ? runtime.label : runtimeState === 'offline' ? 'GF offline · preview only' : 'connecting'}
       </div>
-      <div class="region-chip" data-region={region} title="Tab switches region · hjkl moves in its tree · s/d moves along the sentence · [ ] changes language · = fits">
-        <span>focus</span><b>{region}</b><kbd>hjkl</kbd><kbd>s d</kbd><kbd>[ ]</kbd><kbd>⇥</kbd>
+      <div class="region-chip" data-region={region} title="Tab switches region · hjkl moves in its tree · s/d moves along the sentence · [ ] changes language · = fits · i insert · g graft · e extend · x cut to bench · a new fragment">
+        <span>focus</span><b>{region}</b><kbd>hjkl</kbd><kbd>s d</kbd><kbd>[ ]</kbd><kbd>⇥</kbd><kbd>i g e x a</kbd>
       </div>
       <div class="view-settings">
         {#each Object.entries(OPTIONS) as [key, values]}
@@ -473,7 +564,7 @@
         {#if settings.operad === 'builder'}
           <div class="flow-panel">
             <span class="surface-label operad-label">operad · builder (after Operad14)</span>
-            <BuilderCanvas {bench} {paradigms} focus={benchFocus} {camera} {fitSeq} onFocus={id => benchFocus = id} onChange={next => bench = next} onAdopt={adopt} onSendSentence={sendSentence} />
+            <BuilderCanvas {bench} {paradigms} focus={benchFocus} {camera} {fitSeq} onFocus={id => benchFocus = id} onChange={commitBench} onAdopt={adopt} onSendSentence={sendSentence} />
           </div>
         {:else if settings.operad === 'flow'}
           <div class="flow-panel">

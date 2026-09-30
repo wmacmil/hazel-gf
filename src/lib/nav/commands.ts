@@ -29,6 +29,11 @@ export const COMMANDS = {
   'language.next': 'Next language row',
   'camera.fit': 'Fit the whole tree in view',
   'search.open': 'Find an expression for the focused hole (edit mode)',
+  'edit.insert': 'Insert at the focused node: parse words (any language, _ = hole) or pick an operation',
+  'edit.graft': 'Graft a bench fragment at the focused node',
+  'edit.extend': 'Extend: build around the focused node (it fills a hole of the new expression)',
+  'edit.cut': 'Cut the focused subtree to the bench, leaving a typed hole',
+  'edit.new': 'Start a new bench fragment (parse or pick an operation)',
 } as const
 export type CommandId = keyof typeof COMMANDS
 
@@ -53,6 +58,8 @@ export const PROFILES: Record<string, KeyProfile> = {
       'global.[': 'language.previous', 'global.]': 'language.next',
       'global.=': 'camera.fit',
       'global./': 'search.open',
+      'global.i': 'edit.insert', 'global.g': 'edit.graft', 'global.e': 'edit.extend',
+      'global.x': 'edit.cut', 'global.a': 'edit.new',
     },
   },
 }
