@@ -52,8 +52,8 @@ Four settings, each in the URL and remembered:
 
 - `mode=view|edit`: view is full width; edit adds the palette column (fill,
   clear, wrap, write a word into a hole).
-- `operad=flow|tree`: the operad as a SvelteFlow wiring diagram (default) or a
-  recursive tree. In the flow view every input port is a typed handle;
+- `operad=flow|tree|builder`: the operad as a SvelteFlow wiring diagram
+  (default), a recursive tree, or the tree builder (below). In the flow view every input port is a typed handle;
   dragging a node's output onto a hole's port moves that subtree there, and
   `isValidConnection` asks the kernel (`editor.ts: moveProblem`), showing the
   reason for a refused wire.
@@ -88,6 +88,20 @@ hole's type: the shortest chain from the hole down to the match, with the
 remaining arguments as holes (*red* in an NP hole → `DetCN ⟦Det⟧ (AdjCN
 (PositA RedA) ⟦CN⟧)`). `src/lib/search.ts`; `search.test.ts` checks every
 result has the hole's sort.
+
+## Tree builder
+
+`operad=builder` is an optional workbench after Operad14: build trees
+bottom-up from free-floating fragments instead of top-down in one sentence.
+Add a fragment by typed search (a name, a word, or `-> AP`); each comes with
+typed holes. Drag a fragment's top handle onto a hole's port to plug it in —
+the kernel (`src/lib/builder.ts: plugProblem`) refuses a wrong sort, a filled
+port, or a self-plug, and the canvas shows why. Click a wire to cut a subtree
+out into its own fragment (leaving a hole). `+ current sentence` copies the
+document in; a complete `S` fragment can be adopted as the sentence. The
+bench persists in localStorage. `builder.test.ts` covers the kernel;
+`check-navigation.mjs` builds, cuts, re-plugs, refuses, and adopts in a
+browser.
 
 ## Writing
 

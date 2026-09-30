@@ -120,11 +120,61 @@ try {
   await page.waitForTimeout(600)
   expect('the searched sentence is complete and linearized', (await page.locator('.workspace-bar code').innerText()).startsWith('MkS Present Positive (ExistNP (DetCN'), true)
 
+  // 3d. The builder: send, cut a wire, re-plug by dragging, refuse a wrong sort, adopt.
+  await page.goto(`${BASE}?example=agreement&mode=view&operad=builder&layout=above&lines=auto`)
+  await page.waitForSelector('.builder'); await page.waitForTimeout(600)
+  const status = () => page.locator('.builder .actions span').innerText()
+  await page.getByRole('button', { name: 'clear' }).click()
+  await page.getByRole('button', { name: '+ current sentence' }).click(); await settle()
+  await page.locator('.builder .svelte-flow__controls-fitview').click(); await page.waitForTimeout(400)
+  expect('builder: the sentence arrives as one fragment', await status(), '1 fragment · 0 open holes')
+  const wires = await page.locator('.builder .svelte-flow__edge').count()
+  expect('builder: every child is wired to its parent', wires, (await page.locator('.builder .svelte-flow__node').count()) - 1)
+  await page.evaluate(() => [...document.querySelectorAll('.builder .svelte-flow__edge')].at(-1).dispatchEvent(new MouseEvent('click', { bubbles: true }))); await settle()
+  expect('builder: clicking a wire cuts it into two fragments', await status(), '2 fragments · 1 open holes')
+  await page.locator('.builder .svelte-flow__controls-fitview').click(); await page.waitForTimeout(400)
+  // Re-plug: drag the detached fragment's output onto the hole it left.
+  // Fragment roots are the nodes with a toolbar; the detached one is the root that is not MkS.
+  const detached = await page.evaluate(() => [...document.querySelectorAll('.builder .svelte-flow__node')]
+    .filter(n => n.querySelector('.toolbar') && n.querySelector('.operation')?.dataset.op !== 'MkS').map(n => n.dataset.id))
+  const holeId = await page.evaluate(() => [...document.querySelectorAll('.builder .svelte-flow__node')].find(n => n.querySelector('.card.hole'))?.dataset.id)
+  // The hole's parent port, from the wire into it (edge ids are `${child}->${parent}:${port}`).
+  const holeParent = await page.evaluate(holeId => [...document.querySelectorAll('.builder .svelte-flow__edge')]
+    .map(edge => edge.getAttribute('data-id') ?? '').find(id => id.startsWith(`${holeId}->`)), holeId)
+  const [parentId, port] = holeParent.split('->')[1].split(':')
+  const source = detached[0]
+  const a = await page.locator(`.builder .svelte-flow__node[data-id="${source}"] .svelte-flow__handle[data-handleid="out"]`).boundingBox()
+  const b = await page.locator(`.builder .svelte-flow__node[data-id="${parentId}"] .svelte-flow__handle[data-handleid="in-${port}"]`).boundingBox()
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down()
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 12 }); await page.mouse.up(); await settle()
+  expect('builder: dragging the fragment back onto its hole re-plugs it', await status(), '1 fragment · 0 open holes')
+  // A wrong sort is refused with the kernel's reason.
+  await page.getByLabel('Add a fragment').fill('UseV'); await page.waitForTimeout(200)
+  await page.getByLabel('Add a fragment').press('Enter'); await settle()
+  await page.locator('.builder .svelte-flow__controls-fitview').click(); await page.waitForTimeout(400)
+  const useV = await page.evaluate(() => [...document.querySelectorAll('.builder .svelte-flow__node')].find(n => n.querySelector('.operation')?.dataset.op === 'UseV' && n.querySelector('.toolbar'))?.dataset.id)
+  const detCn = await page.evaluate(() => [...document.querySelectorAll('.builder .svelte-flow__node')].find(n => n.querySelector('.operation')?.dataset.op === 'DetCN')?.dataset.id)
+  const c = await page.locator(`.builder .svelte-flow__node[data-id="${useV}"] .svelte-flow__handle[data-handleid="out"]`).boundingBox()
+  const d = await page.locator(`.builder .svelte-flow__node[data-id="${detCn}"] .svelte-flow__handle[data-handleid="in-1"]`).boundingBox()
+  await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2); await page.mouse.down()
+  await page.mouse.move(d.x + d.width / 2, d.y + d.height / 2, { steps: 12 })
+  const refusalText = await page.locator('.builder .hint').innerText()
+  await page.mouse.up(); await settle()
+  truthy('builder: a VP onto a CN port is refused with the reason', /does not match|already connected/.test(refusalText))
+  expect('builder: the refused wire changed nothing', await status(), '2 fragments · 1 open holes')
+  // Adopt the finished sentence.
+  await page.locator('.builder .toolbar .adopt').first().click(); await settle()
+  truthy('builder: adopting sets the sentence', (await page.locator('.workspace-bar code').innerText()).startsWith('MkS Present Negative (PredVP (DetCN Definite (UseN ManN))'))
+
   // 4. Typing in an input never navigates.
+  await page.getByRole('radiogroup', { name: 'operad' }).getByRole('radio', { name: 'flow' }).click(); await settle()
   await page.getByLabel('Sentence to parse').click()
   const before = await focusedInFlow()
   await page.keyboard.type('hjkl sd')
   expect('keys typed into an input are text, not commands', await focusedInFlow(), before)
+} catch (crash) {
+  // Report what had already failed before the crash: usually the real cause.
+  failures.push(`crashed: ${String(crash.message ?? crash).split('\n')[0]} at ${(crash.stack ?? '').split('\n').find(line => line.includes('check-navigation')) ?? '?'}`)
 } finally {
   await browser?.close()
   server.kill()

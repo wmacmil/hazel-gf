@@ -5,6 +5,8 @@
   import TenseVariations from './components/TenseVariations.svelte'
   import OperadFlow from './components/OperadFlow.svelte'
   import SentenceBox from './components/SentenceBox.svelte'
+  import BuilderCanvas from './components/BuilderCanvas.svelte'
+  import { emptyBench, removeFragment, addFragment, type Workbench } from './lib/builder'
   import { createRuntime, loadParadigms } from './lib/gf'
   import TypeSearch from './components/TypeSearch.svelte'
   import type { SearchResult } from './lib/search'
@@ -12,7 +14,7 @@
   import { producers, profile, wrappers } from './lib/grammar'
   import {
     clearFocused, fillFocused, findNode, isComplete, newDocument, outputOf,
-    fromGfTerm, insertAt, moveSubtree, swapLeaf, toGfTerm, validateDocument, wrapFocused,
+    freshId, fromGfTerm, insertAt, moveSubtree, swapLeaf, toGfTerm, validateDocument, wrapFocused,
   } from './lib/editor'
   import { agreementExample, exampleDocument, modifierExample, prepositionExample } from './lib/examples'
   import { partialProjections } from './lib/projection'
@@ -29,7 +31,8 @@
   /**
    * View settings, each in the URL (?operad=…) and remembered locally:
    * mode — view (full width, parse to explore) or edit (the palette column appears);
-   * operad — the operad as a SvelteFlow wiring diagram or a recursive tree;
+   * operad — the operad as a SvelteFlow wiring diagram, a recursive tree, or the
+   *          Operad14-style builder (a workbench of fragments wired by type);
    * layout — where the graph sits relative to the sentences; details stay below;
    * colors — the colour theory (lib/palette.svelte.ts): channels (hue = abstract vs
    *          concrete) or pos (hue = part of speech, shade = abstract vs concrete);
@@ -38,7 +41,7 @@
    */
   const OPTIONS = {
     mode: ['view', 'edit'],
-    operad: ['flow', 'tree'],
+    operad: ['flow', 'tree', 'builder'],
     layout: ['right', 'left', 'above', 'below'],
     lines: ['auto', 'columns', 'rows'],
     colors: ['channels', 'pos'],
@@ -80,6 +83,23 @@
   let paradigms = $state<Paradigms>()
 
   let searchInput = $state<HTMLInputElement>()
+
+  /** The builder's workbench, remembered locally (fragments may hold holes, so stored as trees, not terms). */
+  const BENCH_KEY = 'hazel-gf-bench'
+  let bench = $state<Workbench>(emptyBench())
+  $effect(() => { localStorage.setItem(BENCH_KEY, JSON.stringify(bench)) })
+  function adopt(fragment: import('./lib/model').Node) {
+    commit({ ...document, root: fragment, focus: fragment.id })
+    bench = removeFragment(bench, fragment.id)
+  }
+  function sendSentence() {
+    const copy = cloneFresh(document.root)
+    bench = addFragment(bench, copy)
+  }
+  /** A fresh-id copy of a tree (fragments must not share node ids with the document). */
+  function cloneFresh(node: import('./lib/model').Node): import('./lib/model').Node {
+    return node.kind === 'hole' ? { ...node, id: freshId() } : { ...node, id: freshId(), children: node.children.map(cloneFresh) }
+  }
 
   /** Insert a found expression into the focused hole; a word match also pins what its form commits to. */
   function insertFound(result: SearchResult) {
@@ -316,6 +336,10 @@
       const saved = JSON.parse(localStorage.getItem(HUES_KEY) ?? 'null') as Partial<Record<PosFamily, number>> | null
       if (saved) palette.hues = { ...palette.hues, ...Object.fromEntries(Object.entries(saved).filter(([family, hue]) => family in POS_FAMILIES && typeof hue === 'number')) }
     } catch { /* keep the defaults */ }
+    try {
+      const saved = JSON.parse(localStorage.getItem(BENCH_KEY) ?? 'null') as Workbench | null
+      if (saved && Array.isArray(saved.fragments)) bench = saved
+    } catch { /* start with an empty bench */ }
     const query = new URLSearchParams(location.search)
     for (const key of Object.keys(OPTIONS) as Setting[]) {
       const requested = query.get(key) ?? localStorage.getItem(`hazel-gf-${key}`)
@@ -435,7 +459,12 @@
 
     <div class="tiles {settings.layout}">
       <div class="pane graph-pane" role="region" aria-label="Operad tree" class:active-region={region === 'tree'} onpointerdown={() => region = 'tree'}>
-        {#if settings.operad === 'flow'}
+        {#if settings.operad === 'builder'}
+          <div class="flow-panel">
+            <span class="surface-label operad-label">operad · builder (after Operad14)</span>
+            <BuilderCanvas {bench} {paradigms} onChange={next => bench = next} onAdopt={adopt} onSendSentence={sendSentence} />
+          </div>
+        {:else if settings.operad === 'flow'}
           <div class="flow-panel">
             <span class="surface-label operad-label">operad · svelteflow wiring</span>
             <OperadFlow root={document.root} focus={document.focus} {linked} {camera} {fitSeq} onFocus={focus} onHover={ids => linked = ids} onMove={move} />

@@ -74,6 +74,18 @@ export function searchExpressions(query: string, target: CategoryId | undefined,
       const rank = id === text || label === text ? 0 : id.startsWith(text) || label.startsWith(text) ? 2 : id.includes(text) || label.includes(text) ? 4 : -1
       if (rank >= 0) push(operation, 'name', rank)
     }
+    // Words with no hole to fill (the builder): each matching leaf on its own.
+    if (paradigms && !target) {
+      for (const language of LANGUAGES) {
+        for (const [form, entries] of formIndex(paradigms, language.id)) {
+          if (!form.startsWith(text)) continue
+          for (const entry of entries) {
+            const operation = CONSTRUCTORS.find(item => item.id === entry.leaf)
+            if (operation) push(operation, 'word', form === text ? 1 : 3, { form: entry.form, language: entry.language, pins: [] })
+          }
+        }
+      }
+    }
     // Words in every language, typed through the same chains (writing.ts).
     if (paradigms && target) {
       for (const language of LANGUAGES) {
